@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap');
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-display: "Outfit", sans-serif;
+
+  --color-brand-bg: #d4c2ae;
+  --color-brand-red: #ab0303;
+  --color-brand-dark-red: #79030f;
+  --color-brand-beige: #d4c2ae;
+}
+
+body {
+  @apply antialiased min-h-screen bg-brand-bg font-sans text-stone-900;
+}
+
+.kpi-card {
+  @apply bg-white p-6 rounded-[24px] shadow-xl border border-brand-dark-red/5 flex flex-col justify-between;
+}
+
+.chart-container {
+  @apply bg-white p-6 rounded-[24px] shadow-xl border border-brand-dark-red/5;
+}
+

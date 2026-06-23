@@ -1,0 +1,6 @@
+{
+  "name": "BPS - Indicadores de Manutenção",
+  "description": "Dashboard de indicadores de manutenção (Transporte Vertical) para o Botafogo Praia Shopping, com importação de dados e autenticação segura.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
