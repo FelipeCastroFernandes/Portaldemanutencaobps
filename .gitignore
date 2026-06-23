@@ -10,6 +10,5 @@ coverage/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 .cache/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml

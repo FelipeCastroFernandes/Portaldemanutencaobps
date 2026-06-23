@@ -37,7 +37,7 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
       }, 0);
 
     const availability = ((totalPotentialMinutes - totalDowntimeMinutes) / totalPotentialMinutes) * 100;
-    
+
     // Garantir que não seja negativo e arredondar
     return Math.max(0, Math.min(100, Math.round(availability * 10) / 10));
   };
@@ -52,15 +52,15 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
 
       {/* Top Bar with Back and Logout buttons */}
       <div className="absolute top-4 left-4 right-4 sm:top-6 sm:left-6 sm:right-6 flex justify-between items-center z-10">
-        <button 
+        <button
           onClick={onBack}
           className="text-white bg-white/10 hover:bg-white/20 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all px-5 py-2.5 rounded-full border border-white/5 shadow-lg backdrop-blur-sm"
         >
           <ArrowLeft size={16} />
           Voltar
         </button>
-        
-        <button 
+
+        <button
           onClick={() => {
             sessionStorage.removeItem('bps_auth');
             window.location.reload();
@@ -72,15 +72,15 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
         </button>
       </div>
 
-      <motion.img 
+      <motion.img
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        src="https://www.botafogopraiashopping.com.br/sites/botafogo-praia/files/styles/logo_header/public/shopping-media/Cabe%C3%A7alho%20e%20Rodap%C3%A9/bps_logo_header.png?itok=d7aZA7B_" 
-        alt="Logo Botafogo Praia Shopping" 
+        src="https://www.botafogopraiashopping.com.br/sites/botafogo-praia/files/styles/logo_header/public/shopping-media/Cabe%C3%A7alho%20e%20Rodap%C3%A9/bps_logo_header.png?itok=d7aZA7B_"
+        alt="Logo Botafogo Praia Shopping"
         className="h-24 md:h-32 mb-12 z-10"
       />
-      
-      <motion.h1 
+
+      <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -98,24 +98,22 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
         >
           <div className="bg-brand-dark-red/5 p-4 rounded-xl group-hover:bg-brand-red group-hover:text-white transition-colors relative">
             <ArrowUpToLine size={32} />
-            <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black border ${
-              elevadoresAvailability === 100 
-                ? 'bg-emerald-500 border-emerald-600 text-white' 
+            <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black border ${elevadoresAvailability === 100
+                ? 'bg-emerald-500 border-emerald-600 text-white'
                 : 'bg-brand-red border-brand-dark-red text-white'
-            }`}>
+              }`}>
               {elevadoresAvailability}%
             </div>
           </div>
           <div className="flex flex-col items-center">
             <span className="font-black text-xl tracking-tight uppercase">ELEVADORES</span>
-            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${
-              elevadoresAvailability === 100 ? 'text-emerald-600' : 'text-brand-red'
-            }`}>
+            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${elevadoresAvailability === 100 ? 'text-emerald-600' : 'text-brand-red'
+              }`}>
               Disponibilidade
             </span>
           </div>
         </motion.button>
-        
+
         <motion.button
           whileHover={{ scale: 1.05, y: -5 }}
           whileTap={{ scale: 0.95 }}
@@ -124,19 +122,17 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
         >
           <div className="bg-brand-dark-red/5 p-4 rounded-xl group-hover:bg-brand-red group-hover:text-white transition-colors relative">
             <ArrowUpRight size={32} />
-            <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black border ${
-              escadasAvailability === 100 
-                ? 'bg-emerald-500 border-emerald-600 text-white' 
+            <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[9px] font-black border ${escadasAvailability === 100
+                ? 'bg-emerald-500 border-emerald-600 text-white'
                 : 'bg-brand-red border-brand-dark-red text-white'
-            }`}>
+              }`}>
               {escadasAvailability}%
             </div>
           </div>
           <div className="flex flex-col items-center">
             <span className="font-black text-xl tracking-tight uppercase">ESCADAS ROLANTES</span>
-            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${
-              escadasAvailability === 100 ? 'text-emerald-600' : 'text-brand-red'
-            }`}>
+            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] mt-1 ${escadasAvailability === 100 ? 'text-emerald-600' : 'text-brand-red'
+              }`}>
               Disponibilidade
             </span>
           </div>
@@ -156,7 +152,7 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
       </div>
 
       <div className="flex flex-col items-center gap-6 z-10">
-        <button 
+        <button
           onClick={onOpenOccurrence}
           className="bg-white hover:bg-brand-beige text-brand-dark-red flex items-center gap-3 px-10 py-4 rounded-full text-xs font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95"
         >
