@@ -373,17 +373,28 @@ export default function OccurrenceModal({
                   <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
                     <User size={10} /> Quem está abrindo?
                   </label>
-                  <select 
-                    required
-                    value={formData.createdBy}
-                    onChange={(e) => setFormData({ ...formData, createdBy: e.target.value })}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
-                  >
-                    <option value="" disabled>Selecionar usuário...</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.fullName}>{u.fullName}</option>
-                    ))}
-                  </select>
+                  {currentUser?.profile === 'Gestor' ? (
+                    // Gestor pode selecionar outro usuário
+                    <select 
+                      required
+                      value={formData.createdBy}
+                      onChange={(e) => setFormData({ ...formData, createdBy: e.target.value })}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
+                    >
+                      <option value="" disabled>Selecionar usuário...</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    // Solicitante vê apenas seu nome (desabilitado)
+                    <input
+                      type="text"
+                      disabled
+                      value={currentUser?.fullName || 'Não identificado'}
+                      className="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none text-gray-600 cursor-not-allowed"
+                    />
+                  )}
                 </div>
               </div>
 
