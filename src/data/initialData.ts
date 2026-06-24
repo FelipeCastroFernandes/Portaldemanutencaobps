@@ -932,9 +932,22 @@ export const INITIAL_ELEVADOR_DATA: MaintenanceRecord[] = [
 ];
 
 export const MESES_ORDEM = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+/** Horas comerciais mensais para ELEVADORES (regime 24h/dia) */
 export const HORAS_MES: Record<string, number> = {
   "JAN": 744, "FEV": 672, "MAR": 744, "ABR": 720, "MAI": 744, "JUN": 720,
   "JUL": 744, "AGO": 744, "SET": 720, "OUT": 744, "NOV": 720, "DEZ": 744
+};
+
+/**
+ * Horas comerciais mensais para ESCADAS ROLANTES (regime 12h/dia).
+ * Corresponde exatamente à metade de HORAS_MES, pois os dias do mês
+ * são os mesmos — apenas o teto diário muda de 24h para 12h.
+ * Base mensal de referência: 12h × 30 dias = 360h/mês.
+ */
+export const HORAS_ESCADA_MES: Record<string, number> = {
+  "JAN": 372, "FEV": 336, "MAR": 372, "ABR": 360, "MAI": 372, "JUN": 360,
+  "JUL": 372, "AGO": 372, "SET": 360, "OUT": 372, "NOV": 360, "DEZ": 372
 };
 
 export const ESCADAS_LIST = ["L1","L2","A1","A2","B1","B2","B3","B4","C1","C2","D1","D2","E1","E2","F1","F2","G1","G2"];

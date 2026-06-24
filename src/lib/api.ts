@@ -1,4 +1,4 @@
-import { User, Occurrence, MaintenanceRecord, EquipmentType } from '../types';
+import { User, Occurrence, MaintenanceRecord, EquipmentType, ProfileLevel } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 let _mockUsers: User[] = [];
@@ -34,7 +34,7 @@ export async function getUsers(): Promise<User[]> {
   } catch (e) {
     console.warn("Failed fetching users from Supabase, using local fallback:", e);
   }
-  return [..._mockUsers];
+  return _mockUsers.map(normalizeUserProfile);
 }
 
 export async function saveUser(user: User): Promise<User> {
@@ -143,6 +143,10 @@ export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence
         end_time: occurrence.end || null,
         technician: occurrence.technician || null,
         reason: occurrence.reason || null,
+        causa_parada: occurrence.causa_parada || null,
+        is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
+        status_history: occurrence.statusHistory || null,
+        extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
         closed_by: occurrence.closedBy || null,
       }).select().single();
       
@@ -177,6 +181,10 @@ export async function updateOccurrence(occurrence: Occurrence): Promise<Occurren
         end_time: occurrence.end || null,
         technician: occurrence.technician || null,
         reason: occurrence.reason || null,
+        causa_parada: occurrence.causa_parada || null,
+        is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
+        status_history: occurrence.statusHistory || null,
+        extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
         closed_by: occurrence.closedBy || null,
       }).eq('id', occurrence.id).select().single();
       
@@ -231,7 +239,7 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 
 // --- Mappers ---
 function dbUserToLocalMap(dbRow: any): User {
-  return {
+  return normalizeUserProfile({
     id: dbRow.id,
     fullName: dbRow.full_name || '',
     email: dbRow.email || '',
@@ -239,8 +247,21 @@ function dbUserToLocalMap(dbRow: any): User {
     photo: dbRow.photo,
     team: dbRow.team || '',
     role: dbRow.role || '',
-    profile: dbRow.profile || 'visualizacao',
+    profile: dbRow.profile || 'Solicitante',
     createdAt: dbRow.created_at || dbRow.createdAt || new Date().toISOString(),
+  });
+}
+
+function normalizeProfile(profile: string | undefined): ProfileLevel {
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return profile;
+  if (profile === 'gestao') return 'Gestor';
+  return 'Solicitante';
+}
+
+function normalizeUserProfile(user: User): User {
+  return {
+    ...user,
+    profile: normalizeProfile(user.profile),
   };
 }
 
@@ -256,6 +277,10 @@ function dbOccurrenceToLocalMap(dbRow: any): Occurrence {
     end: dbRow.end_time || dbRow.end,
     technician: dbRow.technician,
     reason: dbRow.reason,
+    causa_parada: dbRow.causa_parada || dbRow.causaParada,
+    is_equipment_stopped: dbRow.is_equipment_stopped ?? dbRow.isEquipmentStopped,
+    statusHistory: dbRow.status_history || dbRow.statusHistory,
+    extraScopeApprovalMs: Number(dbRow.extra_scope_approval_ms || dbRow.extraScopeApprovalMs || 0) || undefined,
     closedBy: dbRow.closed_by || dbRow.closedBy,
   };
 }

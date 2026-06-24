@@ -6,8 +6,9 @@
 import React, { useState, useMemo } from 'react';
 import { Filter, AlertTriangle, TrendingUp, Hash, Clock, Check, ChevronDown, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MaintenanceRecord, EquipmentType } from '../types';
+import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
 import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
+import { calcDisp } from '../lib/utils';
 import StatsCharts from './StatsCharts';
 import PageHeader from './PageHeader';
 
@@ -16,9 +17,10 @@ interface DashboardViewProps {
   data: MaintenanceRecord[];
   onBack: () => void;
   onOpenOccurrence: () => void;
+  occurrences: Occurrence[];
 }
 
-export default function DashboardView({ type, data, onBack, onOpenOccurrence }: DashboardViewProps) {
+export default function DashboardView({ type, data, onBack, onOpenOccurrence, occurrences }: DashboardViewProps) {
   const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
   const [selectedEquips, setSelectedEquips] = useState<string[]>([]);
   const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
@@ -40,21 +42,22 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence }: 
   const kpis = useMemo(() => {
     const totalChamados = filteredData.reduce((acc, curr) => acc + curr.chamados, 0);
     const mediaDisp = filteredData.length > 0 
-      ? (filteredData.reduce((acc, curr) => acc + curr.disp, 0) / filteredData.length).toFixed(1)
+      ? (filteredData.reduce((acc, curr) => acc + calcDisp(curr, type), 0) / filteredData.length).toFixed(1)
       : '0';
     
     let criticalEq = '-';
     let lowestDisp = 100;
     
     filteredData.forEach(d => {
-      if (d.disp < lowestDisp) {
-        lowestDisp = d.disp;
+      const disp = calcDisp(d, type);
+      if (disp < lowestDisp) {
+        lowestDisp = disp;
         criticalEq = d.equip;
       }
     });
 
     return { totalChamados, mediaDisp, criticalEq, lowestDisp };
-  }, [filteredData]);
+  }, [filteredData, type]);
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
@@ -248,6 +251,7 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence }: 
           allData={data}
           selectedEquips={selectedEquips}
           selectedMonths={selectedMonths}
+          occurrences={occurrences}
         />
     </div>
   );

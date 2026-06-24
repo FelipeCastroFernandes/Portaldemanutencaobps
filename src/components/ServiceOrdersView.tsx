@@ -18,8 +18,8 @@ import {
   FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Occurrence, User as UserType } from '../types';
 import PageHeader from './PageHeader';
+import { CAUSAS_PARADA_BY_TYPE, Occurrence, User as UserType } from '../types';
 
 interface ServiceOrdersViewProps {
   occurrences: Occurrence[];
@@ -40,13 +40,16 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Occurrence | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const [returnFormData, setReturnFormData] = useState({
+  const getInitialReturnFormData = () => ({
     technician: '',
     reason: '',
+    causa_parada: '',
     closedBy: currentUser?.fullName || '',
     endDate: new Date().toISOString().split('T')[0],
     endTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
   });
+
+  const [returnFormData, setReturnFormData] = useState(getInitialReturnFormData());
 
   const handleReturnSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,10 +63,17 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
       end: `${returnFormData.endDate}T${returnFormData.endTime}:00`,
       technician: returnFormData.technician,
       reason: returnFormData.reason,
+      causa_parada: returnFormData.causa_parada,
       closedBy: returnFormData.closedBy,
     });
 
     setClosingOccId(null);
+    setReturnFormData(getInitialReturnFormData());
+  };
+
+  const handleOpenReturnForm = (orderId: string) => {
+    setClosingOccId(orderId);
+    setReturnFormData(getInitialReturnFormData());
   };
 
   const filteredOrders = useMemo(() => {
@@ -100,7 +110,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   }, [occurrences]);
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Tipo', 'Equipamento', 'Nº Chamado', 'Solicitante (Acesso)', 'Atendente (Empresa)', 'Técnico Responsável', 'Motivo da Parada', 'Fechado Por (Acesso)', 'Início', 'Fim', 'Status'];
+    const headers = ['ID', 'Tipo', 'Equipamento', 'Nº Chamado', 'Solicitante (Acesso)', 'Atendente (Empresa)', 'Técnico Responsável', 'Causa de Parada', 'Motivo da Parada', 'Fechado Por (Acesso)', 'Início', 'Fim', 'Status'];
     const rows = filteredOrders.map(o => [
       o.id,
       o.type,
@@ -109,6 +119,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
       o.createdBy || '-',
       o.attendant,
       o.technician || '-',
+      o.causa_parada || '-',
       `"${(o.reason || '-').replace(/"/g, '""')}"`,
       o.closedBy || '-',
       new Date(o.start).toLocaleString(),
@@ -195,6 +206,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
             createdBy: currentUser?.fullName || 'Importação',
             start: startStr,
             end: endStr || undefined,
+            causa_parada: causa?.trim() || undefined,
             reason: (causa + " " + (desc || '')).trim() || undefined,
             technician: retornoDate?.trim() ? 'Técnico Importado' : undefined,
             closedBy: retornoDate?.trim() ? (currentUser?.fullName || 'Importação') : undefined,
@@ -427,24 +439,23 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                           >
                             <Eye size={20} />
                           </button>
-                          {!order.end ? (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setClosingOccId(order.id);
-                                setReturnFormData(prev => ({ ...prev, closedBy: currentUser?.fullName || '' }));
-                              }}
-                              className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
-                              title="Registrar Retorno"
-                            >
-                              <CheckCircle2 size={18} />
-                            </button>
+                           {!order.end ? (
+                             <button 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleOpenReturnForm(order.id);
+                               }}
+                               className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
+                               title="Registrar Retorno"
+                             >
+                               <CheckCircle2 size={18} />
+                             </button>
                           ) : (
                             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                               <CheckCircle2 size={18} />
                             </div>
                           )}
-                          {currentUser?.profile === 'gestao' && (
+                          {currentUser?.profile === 'Gestor' && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -627,6 +638,12 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                           {new Date(selectedOrderDetails.end).toLocaleString('pt-BR')}
                         </span>
                       </div>
+                      <div className="space-y-0.5 col-span-2 border-t border-emerald-100/30 pt-1.5">
+                        <span className="text-[9px] font-black text-emerald-800/40 uppercase tracking-widest block">Causa de Parada</span>
+                        <span className="text-xs font-black text-emerald-900 uppercase">
+                          {selectedOrderDetails.causa_parada || '-'}
+                        </span>
+                      </div>
                     </div>
                     <div className="space-y-0.5 border-t border-emerald-100/50 pt-2">
                       <span className="text-[9px] font-black text-emerald-800/40 uppercase tracking-widest block">Motivo da Parada / Diagnóstico</span>
@@ -653,115 +670,133 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
       </AnimatePresence>
 
       {/* Closure Modal Overlay */}
-      {closingOccId && (
-        <div className="fixed inset-0 bg-brand-dark-red/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border-4 border-white/20 flex flex-col max-h-[90vh] my-auto"
-          >
-            <div className="p-8 md:p-10 bg-brand-dark-red text-white flex justify-between items-start shrink-0">
-              <div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2 block">Intervenção Técnica</span>
-                <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
-                  <CheckCircle2 size={32} className="text-emerald-500" />
-                  Registrar Retorno
-                </h2>
-                <div className="flex gap-2 mt-4">
-                  <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">#{occurrences.find(o => o.id === closingOccId)?.callNumber}</span>
-                  <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{occurrences.find(o => o.id === closingOccId)?.equip}</span>
+      {closingOccId && occurrences.find(o => o.id === closingOccId) && (() => {
+        const occToClose = occurrences.find(o => o.id === closingOccId)!;
+        return (
+          <div className="fixed inset-0 bg-brand-dark-red/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border-4 border-white/20 flex flex-col max-h-[90vh] my-auto"
+            >
+              <div className="p-8 md:p-10 bg-brand-dark-red text-white flex justify-between items-start shrink-0">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2 block">Intervenção Técnica</span>
+                  <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
+                    <CheckCircle2 size={32} className="text-emerald-500" />
+                    Registrar Retorno
+                  </h2>
+                  <div className="flex gap-2 mt-4">
+                    <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">#{occToClose.callNumber}</span>
+                    <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{occToClose.equip}</span>
+                  </div>
                 </div>
+                <button 
+                  onClick={() => setClosingOccId(null)}
+                  className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
+                >
+                  <Trash2 size={24} className="text-white/30 hover:text-white" />
+                </button>
               </div>
-              <button 
-                onClick={() => setClosingOccId(null)}
-                className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
-              >
-                <Trash2 size={24} className="text-white/30 hover:text-white" />
-              </button>
-            </div>
 
-            <form onSubmit={handleReturnSubmit} className="p-8 md:p-10 space-y-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Técnico Responsável</label>
-                  <input 
-                    required
-                    type="text"
-                    value={returnFormData.technician}
-                    onChange={(e) => setReturnFormData({ ...returnFormData, technician: e.target.value })}
-                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
-                    placeholder="Nome do técnico"
-                  />
+              <form onSubmit={handleReturnSubmit} className="p-8 md:p-10 space-y-6 overflow-y-auto flex-1">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Técnico Responsável</label>
+                    <input 
+                      required
+                      type="text"
+                      value={returnFormData.technician}
+                      onChange={(e) => setReturnFormData({ ...returnFormData, technician: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      placeholder="Nome do técnico"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Usuário de Fechamento</label>
+                    <select 
+                      required
+                      value={returnFormData.closedBy}
+                      onChange={(e) => setReturnFormData({ ...returnFormData, closedBy: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
+                    >
+                      <option value="" disabled>Selecionar...</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Usuário de Fechamento</label>
-                  <select 
+
+                <div className="space-y-2 text-left">
+                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Causa de Parada</label>
+                  <select
                     required
-                    value={returnFormData.closedBy}
-                    onChange={(e) => setReturnFormData({ ...returnFormData, closedBy: e.target.value })}
+                    value={returnFormData.causa_parada}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, causa_parada: e.target.value })}
                     className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
                   >
-                    <option value="" disabled>Selecionar...</option>
-                    {users.map(u => (
-                      <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                    <option value="" disabled>Selecionar causa...</option>
+                    {(CAUSAS_PARADA_BY_TYPE[occToClose.type] || []).map(causa => (
+                      <option key={causa} value={causa}>{causa}</option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="space-y-2 text-left">
-                <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Motivo da Parada / Diagnóstico</label>
-                <textarea 
-                  required
-                  value={returnFormData.reason}
-                  onChange={(e) => setReturnFormData({ ...returnFormData, reason: e.target.value })}
-                  className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all min-h-[120px] resize-none"
-                  placeholder="Descreva detalhadamente o motivo da parada ou intervenção..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Data de Conclusão</label>
-                  <input 
+                <div className="space-y-2 text-left">
+                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Motivo da Parada / Diagnóstico</label>
+                  <textarea 
                     required
-                    type="date"
-                    value={returnFormData.endDate}
-                    onChange={(e) => setReturnFormData({ ...returnFormData, endDate: e.target.value })}
-                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                    value={returnFormData.reason}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, reason: e.target.value })}
+                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all min-h-[120px] resize-none"
+                    placeholder="Descreva detalhadamente o motivo da parada ou intervenção..."
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Hora de Conclusão</label>
-                  <input 
-                    required
-                    type="time"
-                    value={returnFormData.endTime}
-                    onChange={(e) => setReturnFormData({ ...returnFormData, endTime: e.target.value })}
-                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
-                  />
-                </div>
-              </div>
 
-              <div className="flex gap-4 pt-6">
-                <button 
-                  type="button"
-                  onClick={() => setClosingOccId(null)}
-                  className="flex-1 py-5 bg-brand-dark-red/5 text-brand-dark-red rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-dark-red/10 transition-all active:scale-95"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit"
-                  className="flex-[2] py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-emerald-600/30 hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
-                >
-                  Finalizar Ordem de Serviço
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Data de Conclusão</label>
+                    <input 
+                      required
+                      type="date"
+                      value={returnFormData.endDate}
+                      onChange={(e) => setReturnFormData({ ...returnFormData, endDate: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Hora de Conclusão</label>
+                    <input 
+                      required
+                      type="time"
+                      value={returnFormData.endTime}
+                      onChange={(e) => setReturnFormData({ ...returnFormData, endTime: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-6">
+                  <button 
+                    type="button"
+                    onClick={() => setClosingOccId(null)}
+                    className="flex-1 py-5 bg-brand-dark-red/5 text-brand-dark-red rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-dark-red/10 transition-all active:scale-95"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-[2] py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-emerald-600/30 hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
+                  >
+                    Finalizar Ordem de Serviço
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        );
+      })()}
 
       {/* Deletion Confirmation Modal Overlay */}
       {deletingOccId && (

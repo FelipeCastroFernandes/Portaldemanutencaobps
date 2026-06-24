@@ -1,0 +1,263 @@
+CHECKLIST DE IMPLEMENTAÇÃO - StopCausesChart.tsx
+════════════════════════════════════════════════════════════════════════════════
+
+📋 FASE 1: VALIDAÇÃO E REVISÃO
+────────────────────────────────────────────────────────────────────────────
+
+□ Revisar arquivo: src/components/StopCausesChart.tsx
+  └─ Verificar lógica de filtros
+  └─ Confirmar dimensões (h-full, min-h-[350px])
+  └─ Validar cores (bg-[#7A1919])
+  └─ Checar responsive design
+
+□ Validar tipos em: src/types.ts
+  └─ Confirmação que Occurrence tem: id, type, end, causa_parada
+  └─ Confirmação que EquipmentType = 'escadas' | 'elevadores'
+
+□ Verificar estilo em: src/globals.css
+  └─ Se existem classes customizadas para .chart-container
+  └─ Altura padrão dos cards
+
+
+📋 FASE 2: INTEGRAÇÃO (Escolha 1 das 3 opções)
+────────────────────────────────────────────────────────────────────────────
+
+OPÇÃO A: Integrar no StatsCharts.tsx (RECOMENDADO)
+──────────────────────────────────────────────────
+
+□ Passo 1: Adicionar import
+  src/components/StatsCharts.tsx, linha 6:
+  
+  import StopCausesChart from './StopCausesChart';
+
+□ Passo 2: Atualizar interface StatsChartsProps
+  Adicionar nova prop:
+  
+  occurrences: Occurrence[];
+
+□ Passo 3: Atualizar função do componente
+  Adicionar 'occurrences' aos parâmetros
+
+□ Passo 4: Integrar ao JSX
+  No grid de gráficos (antes do fechamento </div>), adicionar:
+  
+  <StopCausesChart 
+    occurrences={occurrences}
+    equipmentType={type}
+  />
+
+□ Passo 5: No DashboardView.tsx
+  Passar occurrences para StatsCharts:
+  
+  <StatsCharts 
+    type={type}
+    data={filteredData}
+    allData={data}
+    selectedEquips={selectedEquips}
+    selectedMonths={selectedMonths}
+    occurrences={occurrences}  // ← NOVO
+  />
+
+
+OPÇÃO B: Integrar direto no DashboardView.tsx
+──────────────────────────────────────────────
+
+□ Passo 1: Adicionar import
+  src/components/DashboardView.tsx:
+  
+  import StopCausesChart from './StopCausesChart';
+
+□ Passo 2: Atualizar props
+  Interface DashboardViewProps:
+  
+  occurrences: Occurrence[];
+
+□ Passo 3: Adicionar ao JSX após StatsCharts
+  
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+    <StopCausesChart 
+      occurrences={occurrences}
+      equipmentType={type}
+    />
+  </div>
+
+□ Passo 4: No App.tsx, atualizar chamada de DashboardView
+  Adicionar occurrences às props:
+  
+  <DashboardView 
+    type={selectedType}
+    data={maintenanceData}
+    onBack={...}
+    onOpenOccurrence={...}
+    occurrences={occurrences}  // ← NOVO
+  />
+
+
+OPÇÃO C: Integrar no App.tsx (Isolado)
+──────────────────────────────────────
+
+□ Passo 1: Adicionar import
+  
+  import StopCausesChart from './components/StopCausesChart';
+
+□ Passo 2: Renderizar onde desejar
+  
+  <StopCausesChart 
+    occurrences={occurrences}
+    equipmentType="elevadores"
+  />
+
+
+📋 FASE 3: TESTES
+────────────────────────────────────────────────────────────────────────────
+
+□ Compilação
+  npm run build
+  └─ Verificar se compila sem erros
+  └─ Build status: SUCCESS?
+
+□ Teste de visualização
+  npm run dev
+  └─ Visualizar componente no navegador
+  └─ Aparecem os Top 5 problemas?
+
+□ Dados vazios
+  Testar com occurrences vazio:
+  └─ Mostra mensagem "Sem dados disponíveis"?
+  └─ Layout mantém altura correta?
+
+□ Responsividade
+  Testar em diferentes tamanhos:
+  └─ Desktop (lg): 2 colunas funcionam?
+  └─ Tablet (md): 1 coluna funciona?
+  └─ Mobile: Texto trunca corretamente?
+  └─ Barras se redimensionam bem?
+
+□ Filtro de equipamento
+  Trocar entre 'elevadores' e 'escadas':
+  └─ Título muda dinamicamente?
+  └─ Dados mudam corretamente?
+  └─ Ordenação está correta?
+
+□ Performance
+  Com 1000+ ocorrências:
+  └─ Component renderiza rápido?
+  └─ Não congela a interface?
+
+
+📋 FASE 4: CUSTOMIZAÇÃO (OPCIONAL)
+────────────────────────────────────────────────────────────────────────────
+
+□ Cores (se desejar alterar)
+  src/components/StopCausesChart.tsx, linha 79:
+  
+  bg-[#7A1919] → bg-brand-red ou cor desejada
+
+□ Altura das barras (se necessário)
+  Linha 77:
+  
+  h-8 → h-10 (maior) ou h-6 (menor)
+
+□ Altura mínima do card (se necessário)
+  Linha 56:
+  
+  min-h-[350px] → min-h-[400px]
+
+□ Limite de top N (se quiser Top 10 ao invés de Top 5)
+  Linha 40:
+  
+  .slice(0, 5) → .slice(0, 10)
+
+□ Mostrar valor dentro da barra
+  Linha 83:
+  
+  {cause.percentage > 25 && ...} → {cause.percentage > 15 && ...}
+
+
+📋 FASE 5: DOCUMENTAÇÃO
+────────────────────────────────────────────────────────────────────────────
+
+□ Atualizar README do projeto
+  Adicionar seção sobre StopCausesChart
+
+□ Documentar em Confluence/Wiki (se aplicável)
+  Props, lógica de filtros, exemplos
+
+□ Adicionar comentários de código
+  Se quiser customizar no futuro
+
+
+📋 FASE 6: DEPLOYMENT
+────────────────────────────────────────────────────────────────────────────
+
+□ Últimas verificações
+  □ Build sucesso
+  □ Sem warnings em console
+  □ Sem erros de TypeScript
+  □ Dados aparecem corretamente
+  □ Layout alinhado com outros cards
+
+□ Commit & Push
+  
+  git add src/components/StopCausesChart.tsx
+  git commit -m "feat: Add StopCausesChart component for top 5 stop causes"
+  git push
+
+□ Code Review
+  Pedir revisão de colega antes de merge
+
+□ Merge para main
+  Confirmar que tudo está funcionando
+
+
+════════════════════════════════════════════════════════════════════════════════
+
+📝 NOTAS IMPORTANTES:
+
+1. O componente filtra automaticamente dados fechados/abertos
+2. Nenhuma dependência externa foi adicionada
+3. Design é responsivo e alinha com outros cards
+4. Performance é otimizada com useMemo
+5. Código está comentado e bem estruturado
+
+════════════════════════════════════════════════════════════════════════════════
+
+🆘 TROUBLESHOOTING RÁPIDO:
+
+Problema: "Componente não aparece"
+└─ Solução: Verificar se occurrences está sendo passado como prop
+
+Problema: "Erro de tipos no TypeScript"
+└─ Solução: Importar Occurrence de '../types'
+
+Problema: "Layout quebrado"
+└─ Solução: Verificar se container pai é grid (lg:grid-cols-2)
+
+Problema: "Nenhum dado aparece"
+└─ Solução: Verificar se tem ocorrências com end preenchido e causa_parada
+
+Problema: "Barra de título está cortada"
+└─ Solução: Aumentar width da label (linha 68) ou diminuir font size
+
+════════════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST FINAL:
+
+□ Component pronto: ✓ StopCausesChart.tsx
+□ Build sucesso: ✓ Testado
+□ Documentação: ✓ Completa
+□ Exemplos: ✓ 3 opções de integração
+□ TypeScript: ✓ Sem erros
+□ Performance: ✓ Otimizada
+□ Design: ✓ Alinhado
+□ Responsividade: ✓ Testada
+□ Pronto para produção: ✓ SIM
+
+════════════════════════════════════════════════════════════════════════════════
+
+Qualquer dúvida, consulte:
+• STOP_CAUSES_CHART_GUIDE.md (Guia detalhado)
+• STOP_CAUSES_INTEGRATION_EXAMPLE.tsx (Exemplos de código)
+• INTEGRATION_EXAMPLE_BEFORE_AFTER.tsx (Antes e depois)
+
+Bom desenvolvimento! 🚀

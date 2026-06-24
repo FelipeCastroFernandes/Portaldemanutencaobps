@@ -138,37 +138,6 @@ export default function Login({ onLogin }: LoginProps) {
                 Entrar no Sistema
               </button>
 
-              <div className="mt-6 pt-5 border-t border-white/10 space-y-3">
-                <div className="text-center">
-                  <span className="text-[9px] font-black uppercase text-white/40 tracking-[0.2em]">
-                    Acessos Rápidos de Teste
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsername('admin@botafogopraia.com.br');
-                      setPassword('bps');
-                    }}
-                    className="p-3 bg-white/5 hover:bg-white/10 active:scale-95 transition-all rounded-xl text-left border border-white/5 flex flex-col justify-between cursor-pointer"
-                  >
-                    <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">Administrador</span>
-                    <span className="text-[11px] font-bold text-stone-100 mt-1">admin / bps</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsername('teste@botafogopraia.com.br');
-                      setPassword('123');
-                    }}
-                    className="p-3 bg-white/5 hover:bg-white/10 active:scale-95 transition-all rounded-xl text-left border border-white/5 flex flex-col justify-between cursor-pointer"
-                  >
-                    <span className="text-[8px] font-black text-white/50 uppercase tracking-widest">Técnico</span>
-                    <span className="text-[11px] font-bold text-stone-100 mt-1">teste / 123</span>
-                  </button>
-                </div>
-              </div>
             </motion.form>
           ) : (
             <motion.form 

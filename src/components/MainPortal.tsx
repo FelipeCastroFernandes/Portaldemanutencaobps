@@ -87,7 +87,7 @@ export default function MainPortal({ onEscadas, onElevadores, onOrders, onManage
             </div>
           </motion.button>
 
-          {currentUser?.profile === 'gestao' && (
+          {currentUser?.profile === 'Gestor' && (
             <motion.button 
               whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 1)' }}
               whileTap={{ scale: 0.98 }}

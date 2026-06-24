@@ -9,17 +9,18 @@ import {
   Edit2,
   Camera, 
   ShieldCheck, 
-  Eye, 
   Users, 
   Mail, 
   Briefcase, 
   Trash2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User, ProfileLevel } from '../types';
 import PageHeader from './PageHeader';
+import { useAuth } from '../hooks/useAuth';
 
 interface UserRegistrationViewProps {
   onBack: () => void;
@@ -30,14 +31,17 @@ interface UserRegistrationViewProps {
 }
 
 export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, users, onDeleteUser }: UserRegistrationViewProps) {
+  const { user: authUser } = useAuth();
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     team: '',
     role: '',
-    profile: 'visualizacao' as ProfileLevel,
+    profile: 'Solicitante' as ProfileLevel,
     photo: ''
   });
 
@@ -63,7 +67,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
       password: user.password || '',
       team: user.team || '',
       role: user.role || '',
-      profile: user.profile || 'visualizacao',
+      profile: user.profile || 'Solicitante',
       photo: user.photo || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -77,9 +81,27 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
       password: '',
       team: '',
       role: '',
-      profile: 'visualizacao',
+      profile: 'Solicitante',
       photo: ''
     });
+  };
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      onDeleteUser(userToDelete.id);
+      setShowDeleteConfirm(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setUserToDelete(null);
+  };
+
+  const openDeleteConfirm = (user: User) => {
+    setUserToDelete(user);
+    setShowDeleteConfirm(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -112,6 +134,27 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
+
+  if (authUser?.profile !== 'Gestor') {
+    return (
+      <div className="max-w-6xl mx-auto px-4 pb-12">
+        <PageHeader
+          title="Cadastro de Usuários"
+          subtitle="Controle de Acessos e Perfis"
+          onBack={onBack}
+        />
+
+        <div className="bg-brand-beige/20 border border-brand-dark-red/10 rounded-3xl p-10 text-center shadow-xl">
+          <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-brand-dark-red/10 text-brand-dark-red flex items-center justify-center">
+            <AlertCircle size={32} />
+          </div>
+          <p className="text-brand-dark-red font-black uppercase tracking-tight">
+            Acesso Negado. Esta tela é exclusiva para o Gestor do sistema.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 pb-12">
@@ -249,32 +292,16 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
 
               <div>
                 <label className="block text-[10px] font-black text-brand-dark-red uppercase tracking-[0.2em] mb-2">Nível de Perfil</label>
-                <div className="grid grid-cols-2 gap-2 p-1 bg-brand-beige/20 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({...formData, profile: 'gestao'})}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                      formData.profile === 'gestao' 
-                        ? 'bg-brand-dark-red text-white shadow-lg shadow-brand-dark-red/20' 
-                        : 'text-brand-dark-red/50 hover:text-brand-dark-red'
-                    }`}
-                  >
-                    <ShieldCheck size={14} />
-                    Gestão
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({...formData, profile: 'visualizacao'})}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                      formData.profile === 'visualizacao' 
-                        ? 'bg-brand-dark-red text-white shadow-lg shadow-brand-dark-red/20' 
-                        : 'text-brand-dark-red/50 hover:text-brand-dark-red'
-                    }`}
-                  >
-                    <Eye size={14} />
-                    Visualização
-                  </button>
-                </div>
+                <select
+                  required
+                  className="w-full px-4 py-3 bg-brand-beige/10 border border-brand-dark-red/10 rounded-xl focus:ring-2 focus:ring-brand-red outline-none transition-all text-sm font-bold appearance-none cursor-pointer"
+                  value={formData.profile}
+                  onChange={(e) => setFormData({...formData, profile: e.target.value as ProfileLevel})}
+                >
+                  <option value="Gestor">Gestor</option>
+                  <option value="Planejador">Planejador</option>
+                  <option value="Solicitante">Solicitante</option>
+                </select>
               </div>
 
               <button
@@ -352,8 +379,8 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
                               </div>
                               <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                                 <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nível</span>
-                                <span className={`text-[10px] font-black uppercase tracking-tighter ${user.profile === 'gestao' ? 'text-amber-600' : 'text-blue-600'}`}>
-                                  {user.profile || 'visualizacao'}
+                                <span className={`text-[10px] font-black uppercase tracking-tighter ${user.profile === 'Gestor' ? 'text-amber-600' : user.profile === 'Planejador' ? 'text-brand-red' : 'text-blue-600'}`}>
+                                  {user.profile || 'Solicitante'}
                                 </span>
                               </div>
                             </div>
@@ -371,7 +398,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
                               <Edit2 size={16} />
                             </button>
                             <button
-                              onClick={() => onDeleteUser(user.id)}
+                              onClick={() => openDeleteConfirm(user)}
                               className="p-2 text-gray-300 hover:text-brand-red hover:bg-red-50 rounded-lg transition-all"
                               title="Excluir Usuário"
                             >
@@ -393,6 +420,68 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && userToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-brand-dark-red/90 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border-b-4 border-brand-red"
+            >
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
+                  <AlertTriangle size={32} className="text-brand-red" />
+                </div>
+              </div>
+
+              <h2 className="text-xl font-black text-brand-dark-red uppercase tracking-tight text-center mb-2">
+                Excluir Usuário?
+              </h2>
+              
+              <p className="text-sm text-gray-600 text-center mb-6">
+                Você está prestes a excluir permanentemente o usuário:
+              </p>
+
+              <div className="bg-brand-beige/20 border border-brand-dark-red/10 rounded-xl p-4 mb-6">
+                <p className="text-sm font-bold text-brand-dark-red mb-1">
+                  {userToDelete.fullName}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {userToDelete.email}
+                </p>
+              </div>
+
+              <p className="text-xs text-brand-red font-bold uppercase tracking-widest mb-6 text-center">
+                Esta ação é irreversível e o usuário será removido do banco de dados.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-700 font-black text-xs uppercase tracking-[0.2em] hover:bg-gray-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-4 py-3 bg-brand-red hover:bg-brand-dark-red text-white font-black text-xs uppercase tracking-[0.2em] rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-red/20"
+                >
+                  <Trash2 size={16} />
+                  Excluir
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

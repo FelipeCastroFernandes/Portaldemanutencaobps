@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, ArrowLeft, ChevronRight, BarChart3, Settings, PlusCircle } from 'lucide-react';
-import { INITIAL_ESCADA_DATA, INITIAL_ELEVADOR_DATA, HORAS_MES, MESES_ORDEM } from './data/initialData';
+import { INITIAL_ESCADA_DATA, INITIAL_ELEVADOR_DATA, MESES_ORDEM } from './data/initialData';
 import { MaintenanceRecord, EquipmentType, Occurrence, User } from './types';
 import DashboardView from './components/DashboardView';
 import DashboardCover from './components/DashboardCover';
@@ -19,6 +19,12 @@ import OccurrenceModal from './components/OccurrenceModal';
 import { formatTime } from './lib/utils';
 
 import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteApiUser, getOccurrences, saveOccurrence as apiSaveOccurrence, updateOccurrence as apiUpdateOccurrence, deleteOccurrence as apiDeleteOccurrence, getEquipmentData } from './lib/api';
+
+function normalizeUserProfile(user: User): User {
+  const profile = user.profile as string;
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return user;
+  return { ...user, profile: profile === 'gestao' ? 'Gestor' : 'Solicitante' };
+}
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,7 +61,7 @@ export default function App() {
           password: 'bps',
           team: 'TI',
           role: 'Administrador',
-          profile: 'gestao',
+          profile: 'Gestor',
           createdAt: new Date().toISOString()
         };
 
@@ -66,7 +72,7 @@ export default function App() {
           password: '123',
           team: 'Manutenção',
           role: 'Técnico',
-          profile: 'visualizacao',
+          profile: 'Solicitante',
           createdAt: new Date().toISOString()
         };
 
@@ -90,7 +96,7 @@ export default function App() {
           password: 'bps',
           team: 'TI',
           role: 'Administrador',
-          profile: 'gestao',
+          profile: 'Gestor',
           createdAt: new Date().toISOString()
         };
         const defaultTeste: User = { 
@@ -100,7 +106,7 @@ export default function App() {
           password: '123',
           team: 'Manutenção',
           role: 'Técnico',
-          profile: 'visualizacao',
+          profile: 'Solicitante',
           createdAt: new Date().toISOString()
         };
         setUsers([defaultAdmin, defaultTeste]);
@@ -112,8 +118,10 @@ export default function App() {
     const auth = sessionStorage.getItem('bps_auth');
     const authUser = sessionStorage.getItem('bps_auth_user');
     if (auth === 'true' && authUser) {
+      const parsedUser = normalizeUserProfile(JSON.parse(authUser));
       setIsAuthenticated(true);
-      setCurrentUser(JSON.parse(authUser));
+      setCurrentUser(parsedUser);
+      sessionStorage.setItem('bps_auth_user', JSON.stringify(parsedUser));
     }
   }, []);
 
@@ -169,19 +177,36 @@ export default function App() {
 
   const handleDeleteUser = async (id: string) => {
     if (users.length <= 1) {
-      alert('Não é possível excluir o único usuário.');
+      console.warn('Não é possível excluir o único usuário.');
       return;
     }
     try {
       await deleteApiUser(id);
       setUsers(users.filter(u => u.id !== id));
+      console.log('Usuário excluído com sucesso:', id);
     } catch(e) {
-      console.error(e);
+      console.error('Erro ao excluir usuário:', e);
     }
   };
 
   // Recalculate indicators based on occurrences
   const processedData = useMemo(() => {
+    const getExtraScopeApprovalMs = (occ: Occurrence) => {
+      if (occ.extraScopeApprovalMs) return occ.extraScopeApprovalMs;
+
+      return (occ.statusHistory || []).reduce((total, period) => {
+        if (period.status !== 'Aguardando Aprovação de Escopo Extra' || !period.end) return total;
+        return total + Math.max(0, new Date(period.end).getTime() - new Date(period.start).getTime());
+      }, 0);
+    };
+
+    const getDowntimeMs = (occ: Occurrence) => {
+      if (!occ.end || occ.is_equipment_stopped === false) return 0;
+
+      const grossDowntimeMs = Math.max(0, new Date(occ.end).getTime() - new Date(occ.start).getTime());
+      return Math.max(0, grossDowntimeMs - getExtraScopeApprovalMs(occ));
+    };
+
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
       const typeOccurrences = occurrences.filter(o => o.type === type);
       if (typeOccurrences.length === 0) return baseData;
@@ -200,18 +225,13 @@ export default function App() {
       Object.entries(groupedOcc).forEach(([key, value]) => {
         const occs = value as Occurrence[];
         const [equip, mes] = key.split('-');
-        const totalHours = HORAS_MES[mes as keyof typeof HORAS_MES] || 744;
+        const totalHours = type === 'elevadores' ? 720 : 360;
         
-        let downtimeMs = 0;
-        occs.forEach(occ => {
-          if (occ.end) {
-            downtimeMs += new Date(occ.end).getTime() - new Date(occ.start).getTime();
-          }
-        });
+        const downtimeMs = occs.reduce((total, occ) => total + getDowntimeMs(occ), 0);
 
         const downtimeHours = downtimeMs / (1000 * 60 * 60);
         const chamados = occs.length;
-        const disp = ((totalHours - downtimeHours) / totalHours) * 100;
+        const disp = Math.max(0, Math.min(100, ((totalHours - downtimeHours) / totalHours) * 100));
         const mtbfHours = chamados > 0 ? (totalHours - downtimeHours) / chamados : totalHours;
         const mttrHours = chamados > 0 ? downtimeHours / chamados : 0;
 
@@ -222,7 +242,8 @@ export default function App() {
           chamados,
           disp: parseFloat(disp.toFixed(1)),
           mtbf: formatTime(mtbfHours),
-          mttr: formatTime(mttrHours)
+          mttr: formatTime(mttrHours),
+          baseHours: totalHours,
         };
 
         if (index > -1) {
@@ -324,6 +345,7 @@ export default function App() {
               data={activePage === 'escadas' ? processedData.escadas : processedData.elevadores}
               onBack={() => setActivePage('cover')}
               onOpenOccurrence={() => setIsOccurrenceModalOpen(true)}
+              occurrences={occurrences}
             />
           </motion.div>
         )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Calendar, Clock, User, Hash, CheckCircle2, History, AlertCircle, Trash2, PlusCircle, ClipboardList } from 'lucide-react';
 import { CAUSAS_PARADA_BY_TYPE, EquipmentType, Occurrence, User as UserType } from '../types';
 import { ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
@@ -15,73 +15,40 @@ interface OccurrenceModalProps {
   onDelete: (id: string) => void;
 }
 
-interface FormDataState {
-  is_equipment_stopped: boolean;
-  type: EquipmentType;
-  equip: string;
-  callNumber: string;
-  attendant: string;
-  createdBy: string;
-  startDate: string;
-  startTime: string;
-}
-
-interface ReturnFormDataState {
-  technician: string;
-  reason: string;
-  causa_parada: string;
-  closedBy: string;
-  endDate: string;
-  endTime: string;
-}
-
-const getInitialTime = () => {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  return `${h}:${m}`;
-};
-
-const getInitialFormData = (currentUser: UserType | null): FormDataState => ({
-  is_equipment_stopped: false,
-  type: 'escadas' as EquipmentType,
-  equip: ESCADAS_LIST[0],
-  callNumber: '',
-  attendant: '',
-  createdBy: currentUser?.fullName || '',
-  startDate: new Date().toISOString().split('T')[0],
-  startTime: getInitialTime(),
-});
-
-const getInitialReturnFormData = (): ReturnFormDataState => ({
-  technician: '',
-  reason: '',
-  causa_parada: '',
-  closedBy: '',
-  endDate: new Date().toISOString().split('T')[0],
-  endTime: getInitialTime(),
-});
-
-export default function OccurrenceModal({ 
-  isOpen, 
-  onClose, 
-  occurrences, 
-  users, 
-  currentUser, 
-  onAdd, 
-  onUpdate, 
-  onDelete 
-}: OccurrenceModalProps) {
+export default function OccurrenceModal({ isOpen, onClose, occurrences, users, currentUser, onAdd, onUpdate, onDelete }: OccurrenceModalProps) {
   const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState<FormDataState>(getInitialFormData(currentUser));
-  const [returnFormData, setReturnFormData] = useState<ReturnFormDataState>(getInitialReturnFormData());
+  const getInitialTime = () => {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    return `${h}:${m}`;
+  };
+
+  const [formData, setFormData] = useState({
+    is_equipment_stopped: false,
+    type: 'escadas' as EquipmentType,
+    equip: ESCADAS_LIST[0],
+    callNumber: '',
+    attendant: '',
+    createdBy: currentUser?.fullName || '',
+    startDate: new Date().toISOString().split('T')[0],
+    startTime: getInitialTime(),
+  });
+
+  const [returnFormData, setReturnFormData] = useState({
+    technician: '',
+    reason: '',
+    causa_parada: '',
+    closedBy: currentUser?.fullName || '',
+    endDate: new Date().toISOString().split('T')[0],
+    endTime: getInitialTime(),
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     const newOcc: Occurrence = {
       id: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       type: formData.type,
@@ -92,11 +59,14 @@ export default function OccurrenceModal({
       start: `${formData.startDate}T${formData.startTime}:00`,
       is_equipment_stopped: formData.is_equipment_stopped,
     };
-    
     onAdd(newOcc);
-    
-    // Reset form to initial state
-    setFormData(getInitialFormData(currentUser));
+    setFormData({
+      ...formData,
+      callNumber: '',
+      attendant: '',
+      createdBy: '',
+      is_equipment_stopped: false,
+    });
     setActiveTab('history');
   };
 
@@ -117,20 +87,20 @@ export default function OccurrenceModal({
     });
 
     setClosingOccId(null);
-    setReturnFormData(getInitialReturnFormData());
+    setReturnFormData({
+      technician: '',
+      reason: '',
+      causa_parada: '',
+      closedBy: '',
+      endDate: new Date().toISOString().split('T')[0],
+      endTime: getInitialTime(),
+    });
   };
 
-   const handleOpenReturnForm = (id: string) => {
-     setClosingOccId(id);
-     setReturnFormData({
-       technician: '',
-       reason: '',
-       causa_parada: '',
-       closedBy: currentUser?.fullName || '',
-       endDate: new Date().toISOString().split('T')[0],
-       endTime: getInitialTime(),
-     });
-   };
+  const handleOpenReturnForm = (id: string) => {
+    setClosingOccId(id);
+    setReturnFormData(prev => ({ ...prev, causa_parada: '', closedBy: currentUser?.fullName || '' }));
+  };
 
   if (!isOpen) return null;
 
@@ -188,129 +158,117 @@ export default function OccurrenceModal({
 
         <div className="p-6 flex-1 overflow-y-auto bg-brand-bg/30">
           {closingOccId ? (
-            (() => {
-              const occToClose = occurrences.find(o => o.id === closingOccId);
-              if (!occToClose) {
-                return (
-                  <div className="text-center py-12">
-                    <p className="text-sm text-text-muted font-medium">Chamado não encontrado.</p>
-                  </div>
-                );
-              }
-              return (
-                <form onSubmit={handleReturnSubmit} className="space-y-4">
-                  <div className="bg-brand-red/5 p-4 rounded-xl border border-brand-red/10 mb-6">
-                    <h4 className="text-xs font-black text-brand-dark-red uppercase tracking-widest mb-1">Finalizando Chamado:</h4>
-                    <p className="text-sm font-bold text-brand-red">#{occToClose.callNumber} - {occToClose.equip}</p>
-                  </div>
+            <form onSubmit={handleReturnSubmit} className="space-y-4">
+              <div className="bg-brand-red/5 p-4 rounded-xl border border-brand-red/10 mb-6">
+                <h4 className="text-xs font-black text-brand-dark-red uppercase tracking-widest mb-1">Finalizando Chamado:</h4>
+                <p className="text-sm font-bold text-brand-red">#{occurrences.find(o => o.id === closingOccId)?.callNumber} - {occurrences.find(o => o.id === closingOccId)?.equip}</p>
+              </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                        <User size={10} /> Técnico Responsável
-                      </label>
-                      <input 
-                        required
-                        type="text"
-                        value={returnFormData.technician}
-                        onChange={(e) => setReturnFormData({ ...returnFormData, technician: e.target.value })}
-                        placeholder="Nome do técnico"
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                        <User size={10} /> Quem está fechando?
-                      </label>
-                      <select 
-                        required
-                        value={returnFormData.closedBy}
-                        onChange={(e) => setReturnFormData({ ...returnFormData, closedBy: e.target.value })}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
-                      >
-                        <option value="" disabled>Selecionar usuário...</option>
-                        {users.map(u => (
-                          <option key={u.id} value={u.fullName}>{u.fullName}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                    <User size={10} /> Técnico Responsável
+                  </label>
+                  <input 
+                    required
+                    type="text"
+                    value={returnFormData.technician}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, technician: e.target.value })}
+                    placeholder="Nome do técnico"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                    <User size={10} /> Quem está fechando?
+                  </label>
+                  <select 
+                    required
+                    value={returnFormData.closedBy}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, closedBy: e.target.value })}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
+                  >
+                    <option value="" disabled>Selecionar usuário...</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                      <ClipboardList size={10} /> Causa de Parada
-                    </label>
-                    <select
-                      required
-                      value={returnFormData.causa_parada}
-                      onChange={(e) => setReturnFormData({ ...returnFormData, causa_parada: e.target.value })}
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
-                    >
-                      <option value="" disabled>Selecionar causa...</option>
-                      {(CAUSAS_PARADA_BY_TYPE[occToClose.type] || []).map(causa => (
-                        <option key={causa} value={causa}>{causa}</option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                  <ClipboardList size={10} /> Causa de Parada
+                </label>
+                <select
+                  required
+                  value={returnFormData.causa_parada}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, causa_parada: e.target.value })}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
+                >
+                  <option value="" disabled>Selecionar causa...</option>
+                  {CAUSAS_PARADA_BY_TYPE[occurrences.find(o => o.id === closingOccId)?.type || 'escadas'].map(causa => (
+                    <option key={causa} value={causa}>{causa}</option>
+                  ))}
+                </select>
+              </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                      <ClipboardList size={10} /> Motivo da Parada
-                    </label>
-                    <textarea 
-                      required
-                      value={returnFormData.reason}
-                      onChange={(e) => setReturnFormData({ ...returnFormData, reason: e.target.value })}
-                      placeholder="Descreva o motivo da parada e o serviço realizado..."
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow min-h-[100px]"
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                  <ClipboardList size={10} /> Motivo da Parada
+                </label>
+                <textarea 
+                  required
+                  value={returnFormData.reason}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, reason: e.target.value })}
+                  placeholder="Descreva o motivo da parada e o serviço realizado..."
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow min-h-[100px]"
+                />
+              </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                        <Calendar size={10} /> Data do Retorno
-                      </label>
-                      <input 
-                        required
-                        type="date"
-                        value={returnFormData.endDate}
-                        onChange={(e) => setReturnFormData({ ...returnFormData, endDate: e.target.value })}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
-                        <Clock size={10} /> Horário do Retorno
-                      </label>
-                      <input 
-                        required
-                        type="time"
-                        value={returnFormData.endTime}
-                        onChange={(e) => setReturnFormData({ ...returnFormData, endTime: e.target.value })}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
-                      />
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                    <Calendar size={10} /> Data do Retorno
+                  </label>
+                  <input 
+                    required
+                    type="date"
+                    value={returnFormData.endDate}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, endDate: e.target.value })}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                    <Clock size={10} /> Horário do Retorno
+                  </label>
+                  <input 
+                    required
+                    type="time"
+                    value={returnFormData.endTime}
+                    onChange={(e) => setReturnFormData({ ...returnFormData, endTime: e.target.value })}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow"
+                  />
+                </div>
+              </div>
 
-                  <div className="flex gap-4 mt-6">
-                    <button 
-                      type="button"
-                      onClick={() => setClosingOccId(null)}
-                      className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button 
-                      type="submit"
-                      className="flex-[2] bg-green-600 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-green-700 transition-all shadow-lg hover:shadow-green-600/20 flex items-center justify-center gap-2 group"
-                    >
-                      Finalizar Chamado e Registrar Retorno <CheckCircle2 size={18} />
-                    </button>
-                  </div>
-                </form>
-              );
-            })()
+              <div className="flex gap-4 mt-6">
+                <button 
+                  type="button"
+                  onClick={() => setClosingOccId(null)}
+                  className="flex-1 bg-gray-100 text-gray-500 py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-[2] bg-green-600 text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-green-700 transition-all shadow-lg hover:shadow-green-600/20 flex items-center justify-center gap-2 group"
+                >
+                  Finalizar Chamado e Registrar Retorno <CheckCircle2 size={18} />
+                </button>
+              </div>
+            </form>
           ) : activeTab === 'new' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -342,16 +300,17 @@ export default function OccurrenceModal({
                 </div>
               </div>
 
+              {/* O NOVO CAMPO DA TRIAGEM DO EQUIPAMENTO PARADO */}
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase text-text-muted tracking-widest">Equipamento Parado?</label>
                 <select 
                   required
                   value={formData.is_equipment_stopped ? 'sim' : 'nao'}
                   onChange={(e) => setFormData({ ...formData, is_equipment_stopped: e.target.value === 'sim' })}
-                  className="w-full bg-white border border-brand-red/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none cursor-pointer"
+                  className="w-full bg-white border border-brand-red/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
                 >
-                  <option value="nao">Não</option>
-                  <option value="sim">Sim</option>
+                  <option value="nao">Não (Chamado Estético)</option>
+                  <option value="sim">Sim (Bloqueia Operação / Ativa Downtime)</option>
                 </select>
               </div>
 
@@ -405,7 +364,7 @@ export default function OccurrenceModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                   <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
                     <Calendar size={10} /> Data da Parada
                   </label>
                   <input 
@@ -417,7 +376,7 @@ export default function OccurrenceModal({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
+                   <label className="text-[10px] font-black uppercase text-text-muted tracking-widest flex items-center gap-1">
                     <Clock size={10} /> Horário da Parada
                   </label>
                   <input 
@@ -469,14 +428,16 @@ export default function OccurrenceModal({
                           <h4 className="font-black text-sm text-brand-dark-red">#{occ.callNumber}</h4>
                         </div>
                         <div className="flex items-center gap-2">
-                          {currentUser?.profile === 'Gestor' && (
-                            <button 
-                              onClick={() => setDeletingOccId(occ.id)}
+                           {currentUser?.profile === 'Gestor' && (
+                             <button 
+                              onClick={() => {
+                                setDeletingOccId(occ.id);
+                              }}
                               className="p-2 text-gray-400 hover:text-brand-red opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                               <Trash2 size={14} />
                             </button>
-                          )}
+                           )}
                         </div>
                       </div>
 
@@ -528,7 +489,7 @@ export default function OccurrenceModal({
         </div>
 
         <div className="p-4 bg-gray-50 text-[10px] text-text-muted font-bold text-center border-t border-gray-200">
-          SISTEMA DE GESTÃO DE MANUTENÇÃO BOTAFOGO PRAIA SHOPPING
+           SISTEMA DE GESTÃO DE MANUTENÇÃO BOTAFOGO PRAIA SHOPPING
         </div>
       </motion.div>
 

@@ -22,11 +22,15 @@ export default function DashboardCover({ onNavigate, onViewOrders, onOpenOccurre
     const totalEquips = list.length;
     if (totalEquips === 0) return 100;
 
-    // Periodo de referência: Últimos 30 dias (em minutos)
-    const thirtyDaysInMinutes = 30 * 24 * 60;
-    const totalPotentialMinutes = thirtyDaysInMinutes * totalEquips;
+    /**
+     * Teto comercial diário por tipo de equipamento:
+     * - Elevadores:      24h/dia → 30 × 24 × 60 = 43.200 min/equip/mês
+     * - Escadas Rolantes: 12h/dia → 30 × 12 × 60 = 21.600 min/equip/mês
+     */
+    const horasDiarias = type === 'escadas' ? 12 : 24;
+    const totalPotentialMinutes = 30 * horasDiarias * 60 * totalEquips;
 
-    // Calcular tempo parado total apenas de chamados FECHADOS
+    // Calcular downtime total apenas de chamados FECHADOS
     const totalDowntimeMinutes = occurrences
       .filter(occ => occ.type === type && occ.end)
       .reduce((acc, occ) => {

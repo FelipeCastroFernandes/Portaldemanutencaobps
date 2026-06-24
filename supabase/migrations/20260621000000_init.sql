@@ -5,9 +5,13 @@ BEGIN
         CREATE TYPE equipment_type AS ENUM ('escadas', 'elevadores');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'profile_level') THEN
-        CREATE TYPE profile_level AS ENUM ('gestao', 'visualizacao');
+        CREATE TYPE profile_level AS ENUM ('Gestor', 'Planejador', 'Solicitante');
     END IF;
 END $$;
+
+ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Gestor';
+ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Planejador';
+ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Solicitante';
 
 -- Table: public.users
 CREATE TABLE IF NOT EXISTS public.users (
@@ -18,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   photo TEXT,
   team TEXT NOT NULL,
   role TEXT NOT NULL,
-  profile profile_level NOT NULL DEFAULT 'visualizacao',
+  profile profile_level NOT NULL DEFAULT 'Solicitante',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -34,8 +38,17 @@ CREATE TABLE IF NOT EXISTS public.occurrences (
   end_time TIMESTAMPTZ,
   technician TEXT,
   reason TEXT,
+  causa_parada TEXT,
+  is_equipment_stopped BOOLEAN,
+  status_history JSONB,
+  extra_scope_approval_ms BIGINT,
   closed_by TEXT
 );
+
+ALTER TABLE public.occurrences ADD COLUMN IF NOT EXISTS causa_parada TEXT;
+ALTER TABLE public.occurrences ADD COLUMN IF NOT EXISTS is_equipment_stopped BOOLEAN;
+ALTER TABLE public.occurrences ADD COLUMN IF NOT EXISTS status_history JSONB;
+ALTER TABLE public.occurrences ADD COLUMN IF NOT EXISTS extra_scope_approval_ms BIGINT;
 
 -- Table: public.maintenance_records
 CREATE TABLE IF NOT EXISTS public.maintenance_records (

@@ -9,9 +9,10 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
   ComposedChart, ReferenceLine 
 } from 'recharts';
-import { MaintenanceRecord, EquipmentType } from '../types';
-import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST, HORAS_MES } from '../data/initialData';
-import { parseTime } from '../lib/utils';
+import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
+import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
+import { parseTime, calcDisp } from '../lib/utils';
+import StopCausesChart from './StopCausesChart';
 
 interface StatsChartsProps {
   type: EquipmentType;
@@ -19,14 +20,21 @@ interface StatsChartsProps {
   allData: MaintenanceRecord[];
   selectedEquips: string[];
   selectedMonths: string[];
+  occurrences: Occurrence[];
 }
 
 const COLORS = ['#79030f', '#ab0303', '#b76058', '#d4c2ae', '#4a0209', '#e8877e', '#2b2b2b', '#942b2b'];
 
-export default function StatsCharts({ type, data, allData, selectedEquips, selectedMonths }: StatsChartsProps) {
+export default function StatsCharts({ type, data, allData, selectedEquips, selectedMonths, occurrences }: StatsChartsProps) {
   const equipList = type === 'escadas' ? ESCADAS_LIST : ELEVADORES_LIST;
+  const commercialMonthHours = type === 'elevadores' ? 720 : 360;
 
   // 1. Chart Data: Disponibilidade por Equipamento ou Meses
+  interface CausaChartData {
+  name: string;
+  quantidade: number;
+}
+
   const barData = useMemo(() => {
     const isMultiEquip = selectedEquips.length !== 1;
     const labels = isMultiEquip ? equipList : MESES_ORDEM.filter(m => data.some(d => d.mes === m));
@@ -35,7 +43,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       const matched = data.filter(d => (isMultiEquip ? d.equip : d.mes) === label);
       // No calls = 100% Availability
       const avgDisp = matched.length > 0 
-        ? matched.reduce((acc, curr) => acc + curr.disp, 0) / matched.length
+        ? matched.reduce((acc, curr) => acc + calcDisp(curr, type), 0) / matched.length
         : 100;
       
       return {
@@ -49,9 +57,9 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       }
       return true;
     });
-  }, [data, selectedEquips, equipList]);
+  }, [data, selectedEquips, equipList, type]);
 
-  // 2. Chart Data: Trend Menal
+  // 2. Chart Data: Trend Mensal
   const trendData = useMemo(() => {
     const trendBase = selectedEquips.length > 0 ? allData.filter(d => selectedEquips.includes(d.equip)) : allData;
     const meses = MESES_ORDEM.filter(m => {
@@ -62,14 +70,14 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
 
     return meses.map(m => {
       const mData = trendBase.filter(d => d.mes === m);
-      const avg = mData.length > 0 ? mData.reduce((a, c) => a + c.disp, 0) / mData.length : 100;
+      const avg = mData.length > 0 ? mData.reduce((a, c) => a + calcDisp(c, type), 0) / mData.length : 100;
       return {
         name: m,
         disp: parseFloat(avg.toFixed(1)),
         meta: 97
       };
     }).filter(d => d.disp > 0);
-  }, [allData, selectedEquips, selectedMonths]);
+  }, [allData, selectedEquips, selectedMonths, type]);
 
   // 3. Chart Data: Pie Chamados
   const pieData = useMemo(() => {
@@ -94,7 +102,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       ? selectedMonths 
       : Array.from(new Set(allData.map(d => d.mes)));
     
-    const totalHoursInScope = monthsInScope.reduce((acc, m) => acc + (HORAS_MES[m] || 744), 0);
+    const totalHoursInScope = monthsInScope.length * commercialMonthHours;
     
     return labels.map(label => {
       const matched = data.filter(d => (isMultiEquip ? d.equip : d.mes) === label);
@@ -107,7 +115,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         avgMttr = matched.reduce((acc, curr) => acc + parseTime(curr.mttr), 0) / matched.length;
       } else {
         // Default values for items with no failures
-        avgMtbf = isMultiEquip ? totalHoursInScope : (HORAS_MES[label as keyof typeof HORAS_MES] || 744);
+        avgMtbf = isMultiEquip ? totalHoursInScope : commercialMonthHours;
         avgMttr = 0;
       }
       
@@ -122,7 +130,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       }
       return true;
     });
-  }, [data, allData, selectedEquips, selectedMonths, equipList]);
+  }, [data, allData, selectedEquips, selectedMonths, equipList, commercialMonthHours]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -241,12 +249,22 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
               <Tooltip formatter={(v: number) => {
                 const days = (v / 24).toFixed(2);
                 return [`${v}h (${days} dias)`, 'MTTR'];
-              }} />
-              <Bar dataKey="mttr" name="MTTR (Horas)" fill="#2b2b2b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    </div>
-  );
+               }} />
+               <Bar dataKey="mttr" name="MTTR (Horas)" fill="#2b2b2b" radius={[4, 4, 0, 0]} />
+             </BarChart>
+           </ResponsiveContainer>
+         </div>
+       </div>
+
+       {/* 6. Stop Causes Chart - Full width like Availability chart */}
+       <div className="lg:col-span-2">
+         <StopCausesChart 
+           occurrences={occurrences}
+           equipmentType={type}
+         />
+       </div>
+     </div>
+   );
 }
+
+
