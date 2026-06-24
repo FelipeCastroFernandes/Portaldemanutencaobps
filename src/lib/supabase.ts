@@ -20,6 +20,13 @@ export const isSupabaseConfigured = (): boolean => {
   return !!supabaseUrl && !!supabaseAnonKey && supabaseUrl !== 'undefined';
 };
 
+// Log configuration status for debugging (only in dev mode)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  console.debug('[Supabase] URL configured:', !!supabaseUrl);
+  console.debug('[Supabase] Anon key configured:', !!supabaseAnonKey);
+  console.debug('[Supabase] Is configured:', isSupabaseConfigured());
+}
+
 export const supabase = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
