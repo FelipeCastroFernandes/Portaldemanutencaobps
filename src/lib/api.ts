@@ -25,21 +25,45 @@ const saveLocal = () => {
 export async function getUsers(): Promise<User[]> {
   try {
     if (isSupabaseConfigured() && supabase) {
+      console.log('[getUsers] Fetching from Supabase...');
       const { data, error } = await supabase.from('users').select('*');
-      if (!error && data) {
+      
+      if (error) {
+        console.error('[getUsers] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        });
+        console.warn("Supabase query users error, using local fallback:", error);
+      } else if (data) {
+        console.log('[getUsers] Successfully fetched', data.length, 'users from Supabase');
         return data.map(dbUserToLocalMap);
       }
-      console.warn("Supabase query users error, using local fallback:", error);
+    } else {
+      console.log('[getUsers] Supabase not configured');
     }
   } catch (e) {
+    console.error('[getUsers] Exception caught:', e);
     console.warn("Failed fetching users from Supabase, using local fallback:", e);
   }
+  
+  console.log('[getUsers] Using localStorage fallback with', _mockUsers.length, 'users');
   return _mockUsers.map(normalizeUserProfile);
 }
 
 export async function saveUser(user: User): Promise<User> {
+  const isConfigured = isSupabaseConfigured();
+  console.log('[saveUser] Starting save. Supabase configured:', isConfigured);
+  
   try {
-    if (isSupabaseConfigured() && supabase) {
+    if (isConfigured && supabase) {
+      console.log('[saveUser] Attempting Supabase insert with:', {
+        full_name: user.fullName,
+        email: user.email,
+        team: user.team,
+        profile: user.profile,
+      });
+      
       const { data, error } = await supabase.from('users').insert({
         full_name: user.fullName,
         email: user.email,
@@ -47,21 +71,33 @@ export async function saveUser(user: User): Promise<User> {
         photo: user.photo,
         team: user.team,
         role: user.role,
-        profile: user.profile,
+        profile: profileToDb(user.profile),
       }).select().single();
       
-      if (!error && data) {
+      if (error) {
+        console.error('[saveUser] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        console.warn("Supabase saveUser error, using local fallback:", error);
+      } else if (data) {
+        console.log('[saveUser] Successfully saved to Supabase:', data);
         const localUser = dbUserToLocalMap(data);
         _mockUsers.push(localUser);
         saveLocal();
         return localUser;
       }
-      console.warn("Supabase saveUser error, using local fallback:", error);
+    } else {
+      console.log('[saveUser] Supabase not configured or not available');
     }
   } catch (e) {
+    console.error('[saveUser] Exception caught:', e);
     console.warn("Failed saving user to Supabase, using local fallback:", e);
   }
 
+  console.log('[saveUser] Falling back to localStorage');
   const newUser = { ...user, id: Math.random().toString(36).substr(2, 9), createdAt: new Date().toISOString() };
   _mockUsers.push(newUser);
   saveLocal();
@@ -78,7 +114,7 @@ export async function updateUser(user: User): Promise<User> {
         photo: user.photo,
         team: user.team,
         role: user.role,
-        profile: user.profile,
+        profile: profileToDb(user.profile),
       }).eq('id', user.id).select().single();
       
       if (!error && data) {
@@ -238,6 +274,20 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 }
 
 // --- Mappers ---
+// Convert app profile values to Supabase enum
+function profileToDb(profile: string | undefined): string {
+  if (!profile) return 'visualizacao';
+  // Map app profiles to database enum value
+  // Currently the database only has 'visualizacao' enum value
+  return 'visualizacao';
+}
+
+// Convert Supabase profile values to app format
+function profileFromDb(dbProfile: string | undefined): string {
+  if (!dbProfile || dbProfile === 'visualizacao') return 'Solicitante';
+  return dbProfile;
+}
+
 function dbUserToLocalMap(dbRow: any): User {
   return normalizeUserProfile({
     id: dbRow.id,
@@ -247,7 +297,7 @@ function dbUserToLocalMap(dbRow: any): User {
     photo: dbRow.photo,
     team: dbRow.team || '',
     role: dbRow.role || '',
-    profile: dbRow.profile || 'Solicitante',
+    profile: profileFromDb(dbRow.profile) || 'Solicitante',
     createdAt: dbRow.created_at || dbRow.createdAt || new Date().toISOString(),
   });
 }
