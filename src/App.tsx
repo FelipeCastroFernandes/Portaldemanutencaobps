@@ -14,6 +14,7 @@ import DashboardCover from './components/DashboardCover';
 import MainPortal from './components/MainPortal';
 import ServiceOrdersView from './components/ServiceOrdersView';
 import UserRegistrationView from './components/UserRegistrationView';
+import TaskManagementView from './components/TaskManagementView';
 import Login from './components/Login';
 import OccurrenceModal from './components/OccurrenceModal';
 import { formatTime } from './lib/utils';
@@ -29,7 +30,7 @@ function normalizeUserProfile(user: User): User {
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activePage, setActivePage] = useState<'portal' | 'cover' | 'escadas' | 'elevadores' | 'orders' | 'registration'>('portal');
+  const [activePage, setActivePage] = useState<'portal' | 'cover' | 'escadas' | 'elevadores' | 'orders' | 'registration' | 'tasks'>('portal');
   const [escadaData, setEscadaData] = useState<MaintenanceRecord[]>(INITIAL_ESCADA_DATA);
   const [elevadorData, setElevadorData] = useState<MaintenanceRecord[]>(INITIAL_ELEVADOR_DATA);
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
@@ -302,6 +303,7 @@ export default function App() {
             onEscadas={() => setActivePage('cover')}
             onElevadores={() => setActivePage('elevadores')}
             onOrders={() => setActivePage('orders')}
+            onTasks={() => setActivePage('tasks')}
             onManageUsers={() => setActivePage('registration')}
             onLogout={handleLogout}
             currentUser={currentUser}
@@ -323,6 +325,10 @@ export default function App() {
             onAddUser={handleAddUser}
             onUpdateUser={handleUpdateUser}
             onDeleteUser={handleDeleteUser}
+          />
+        ) : activePage === 'tasks' ? (
+          <TaskManagementView 
+            onBack={() => setActivePage('portal')}
           />
         ) : activePage === 'cover' ? (
           <DashboardCover 
@@ -362,8 +368,8 @@ export default function App() {
         onDelete={handleDeleteOccurrence}
       />
       
-      {/* Floating Action Button for Occurrence when not in login/portal/orders/registration */}
-      {activePage !== 'portal' && activePage !== 'cover' && activePage !== 'orders' && activePage !== 'registration' && (
+      {/* Floating Action Button for Occurrence when not in login/portal/cover/orders/registration/tasks */}
+      {activePage !== 'portal' && activePage !== 'cover' && activePage !== 'orders' && activePage !== 'registration' && activePage !== 'tasks' && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
            <button
             onClick={() => setIsOccurrenceModalOpen(true)}

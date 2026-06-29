@@ -1,8 +1,9 @@
-import { User, Occurrence, MaintenanceRecord, EquipmentType, ProfileLevel } from '../types';
+import { User, Occurrence, MaintenanceRecord, EquipmentType, ProfileLevel, Task } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 let _mockUsers: User[] = [];
 let _mockOccurrences: Occurrence[] = [];
+let _mockTasks: Task[] = [];
 
 if (typeof window !== 'undefined') {
   try {
@@ -11,6 +12,9 @@ if (typeof window !== 'undefined') {
     
     const storedOccurrences = localStorage.getItem('bps_occurrences');
     if (storedOccurrences) _mockOccurrences = JSON.parse(storedOccurrences);
+
+    const storedTasks = localStorage.getItem('bps_tasks');
+    if (storedTasks) _mockTasks = JSON.parse(storedTasks);
   } catch (e) {}
 }
 
@@ -18,6 +22,7 @@ const saveLocal = () => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('bps_users', JSON.stringify(_mockUsers));
     localStorage.setItem('bps_occurrences', JSON.stringify(_mockOccurrences));
+    localStorage.setItem('bps_tasks', JSON.stringify(_mockTasks));
   }
 };
 
@@ -257,6 +262,113 @@ export async function deleteOccurrence(id: string): Promise<void> {
   saveLocal();
 }
 
+// --- Tasks ---
+export async function getTasks(): Promise<Task[]> {
+  try {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase.from('tasks').select('*').order('score', { ascending: false });
+      if (!error && data) {
+        return data.map(dbTaskToLocalMap);
+      }
+      console.warn("Supabase query tasks error, using local fallback:", error);
+    }
+  } catch (e) {
+    console.warn("Failed fetching tasks from Supabase, using local fallback:", e);
+  }
+  return [..._mockTasks].sort((a, b) => b.score - a.score);
+}
+
+export async function saveTask(task: Task): Promise<Task> {
+  try {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase.from('tasks').insert({
+        title: task.title,
+        hours: task.hours,
+        impact: task.impact,
+        urgency: task.urgency,
+        responsible: task.responsible,
+        notes: task.notes,
+        status: task.status,
+        collaborator: task.collaborator || null,
+        score: task.score,
+        archived_at: task.archivedAt || null,
+      }).select().single();
+
+      if (!error && data) {
+        const localTask = dbTaskToLocalMap(data);
+        _mockTasks.push(localTask);
+        saveLocal();
+        return localTask;
+      }
+      console.warn("Supabase saveTask error, using local fallback:", error);
+    }
+  } catch (e) {
+    console.warn("Failed saving task to Supabase, using local fallback:", e);
+  }
+
+  const newTask = { ...task, id: Math.random().toString(36).substr(2, 9), createdAt: new Date().toISOString() };
+  _mockTasks.push(newTask);
+  saveLocal();
+  return newTask;
+}
+
+export async function updateTask(task: Task): Promise<Task> {
+  try {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase.from('tasks').update({
+        title: task.title,
+        hours: task.hours,
+        impact: task.impact,
+        urgency: task.urgency,
+        responsible: task.responsible,
+        notes: task.notes,
+        status: task.status,
+        collaborator: task.collaborator || null,
+        score: task.score,
+        archived_at: task.archivedAt || null,
+      }).eq('id', task.id).select().single();
+
+      if (!error && data) {
+        const localTask = dbTaskToLocalMap(data);
+        _mockTasks = _mockTasks.map(t => t.id === localTask.id ? localTask : t);
+        saveLocal();
+        return localTask;
+      }
+      console.warn("Supabase updateTask error, using local fallback:", error);
+    }
+  } catch (e) {
+    console.warn("Failed updating task on Supabase, using local fallback:", e);
+  }
+
+  _mockTasks = _mockTasks.map(t => t.id === task.id ? task : t);
+  saveLocal();
+  return task;
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  try {
+    if (isSupabaseConfigured() && supabase) {
+      const { error } = await supabase.from('tasks').delete().eq('id', id);
+      if (error) {
+        console.warn("Supabase deleteTask error:", error);
+      }
+    }
+  } catch (e) {
+    console.warn("Failed deleting task from Supabase:", e);
+  }
+
+  _mockTasks = _mockTasks.filter(t => t.id !== id);
+  saveLocal();
+}
+
+export async function archiveDoneTasks(): Promise<void> {
+  const doneTasks = _mockTasks.filter(t => t.status === 'done' && !t.archivedAt);
+  for (const task of doneTasks) {
+    const archived: Task = { ...task, archivedAt: new Date().toISOString() };
+    await updateTask(archived);
+  }
+}
+
 // --- Equipment data ---
 export async function getEquipmentData(type: EquipmentType): Promise<MaintenanceRecord[]> {
   try {
@@ -332,6 +444,23 @@ function dbOccurrenceToLocalMap(dbRow: any): Occurrence {
     statusHistory: dbRow.status_history || dbRow.statusHistory,
     extraScopeApprovalMs: Number(dbRow.extra_scope_approval_ms || dbRow.extraScopeApprovalMs || 0) || undefined,
     closedBy: dbRow.closed_by || dbRow.closedBy,
+  };
+}
+
+function dbTaskToLocalMap(dbRow: any): Task {
+  return {
+    id: dbRow.id,
+    title: dbRow.title,
+    hours: Number(dbRow.hours || 0),
+    impact: dbRow.impact || 'medium',
+    urgency: dbRow.urgency || 'planned',
+    responsible: dbRow.responsible || '',
+    notes: dbRow.notes || '',
+    status: dbRow.status || 'backlog',
+    collaborator: dbRow.collaborator || undefined,
+    score: Number(dbRow.score || 0),
+    createdAt: dbRow.created_at || dbRow.createdAt || new Date().toISOString(),
+    archivedAt: dbRow.archived_at || dbRow.archivedAt || undefined,
   };
 }
 

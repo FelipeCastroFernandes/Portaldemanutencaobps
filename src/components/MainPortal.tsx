@@ -11,12 +11,13 @@ interface MainPortalProps {
   onEscadas: () => void;
   onElevadores: () => void;
   onOrders: () => void;
+  onTasks: () => void;
   onManageUsers: () => void;
   onLogout: () => void;
   currentUser: User | null;
 }
 
-export default function MainPortal({ onEscadas, onElevadores, onOrders, onManageUsers, onLogout, currentUser }: MainPortalProps) {
+export default function MainPortal({ onEscadas, onElevadores, onOrders, onTasks, onManageUsers, onLogout, currentUser }: MainPortalProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-dark-red p-6 text-center relative overflow-hidden pt-24 sm:pt-6">
       {/* Background Decor */}
@@ -71,7 +72,7 @@ export default function MainPortal({ onEscadas, onElevadores, onOrders, onManage
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-3xl">
           <motion.button 
             whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 1)' }}
             whileTap={{ scale: 0.98 }}
@@ -86,6 +87,23 @@ export default function MainPortal({ onEscadas, onElevadores, onOrders, onManage
               <span className="text-[9px] font-bold text-brand-dark-red/50 uppercase tracking-[0.2em] block">Escadas e Elevadores</span>
             </div>
           </motion.button>
+
+          {(currentUser?.profile === 'Gestor' || currentUser?.profile === 'Planejador') && (
+            <motion.button 
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 1)' }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onTasks}
+              className="group flex flex-col items-center justify-center bg-brand-bg text-brand-dark-red p-8 rounded-3xl shadow-2xl transition-all border-b-8 border-brand-red"
+            >
+              <div className="bg-brand-dark-red/10 p-5 rounded-2xl group-hover:bg-brand-dark-red transition-colors mb-6">
+                <ClipboardList size={32} className="group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-center">
+                <span className="block text-lg font-black uppercase tracking-tighter leading-none mb-2">Gestão de Tarefas</span>
+                <span className="text-[9px] font-bold text-brand-dark-red/50 uppercase tracking-[0.2em] block">Painel de Capacidade</span>
+              </div>
+            </motion.button>
+          )}
 
           {currentUser?.profile === 'Gestor' && (
             <motion.button 

@@ -7,6 +7,25 @@ export type EquipmentType = 'escadas' | 'elevadores';
 
 export type ProfileLevel = 'Gestor' | 'Planejador' | 'Solicitante';
 
+export type TaskStatus = 'backlog' | 'todo' | 'doing' | 'done';
+export type TaskImpact = 'low' | 'medium' | 'critical';
+export type TaskUrgency = 'strategic' | 'planned' | 'immediate';
+
+export interface Task {
+  id: string;
+  title: string;
+  hours: number;
+  impact: TaskImpact;
+  urgency: TaskUrgency;
+  responsible: string;
+  notes: string;
+  status: TaskStatus;
+  collaborator?: string;
+  score: number;
+  createdAt: string;
+  archivedAt?: string;
+}
+
 export const CAUSAS_PARADA_BY_TYPE: Record<EquipmentType, string[]> = {
   elevadores: [
     'CORREDIÇAS',
