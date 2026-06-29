@@ -51,6 +51,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [expandedCol, setExpandedCol] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -119,9 +120,25 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
     setTasks(prev => prev.map(t => t.id === saved.id ? saved : t));
   };
 
-  const openModal = () => setIsModalOpen(true);
+  const openModal = () => {
+    setEditingTask(null);
+    setIsModalOpen(true);
+  };
+  const openEditModal = (task: Task) => {
+    setNewTask({
+      title: task.title,
+      hours: String(task.hours),
+      impact: task.impact,
+      urgency: task.urgency,
+      responsible: task.responsible || '',
+      notes: task.notes,
+    });
+    setEditingTask(task);
+    setIsModalOpen(true);
+  };
   const closeModal = () => {
     setIsModalOpen(false);
+    setEditingTask(null);
     setNewTask({ title: '', hours: '', impact: 'medium', urgency: 'planned', responsible: '', notes: '' });
   };
 
@@ -129,6 +146,22 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
     if (!newTask.title.trim()) return;
     const hoursNum = parseFloat(newTask.hours) || 0;
     const score = calculateScore(newTask.impact, newTask.urgency);
+    if (editingTask) {
+      const updated: Task = {
+        ...editingTask,
+        title: newTask.title,
+        hours: hoursNum,
+        impact: newTask.impact,
+        urgency: newTask.urgency,
+        responsible: newTask.responsible,
+        notes: newTask.notes,
+        score,
+      };
+      const saved = await updateTask(updated);
+      setTasks(prev => prev.map(t => t.id === saved.id ? saved : t));
+      closeModal();
+      return;
+    }
     const task: Task = {
       id: `task-${Date.now()}`,
       title: newTask.title,
@@ -242,6 +275,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
                 animate={{ opacity: 1, y: 0 }}
                 draggable
                 onDragStart={e => handleDragStart(e, task.id)}
+                onDoubleClick={() => openEditModal(task)}
                 className="bg-white p-3 rounded-xl border border-stone-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing"
               >
                 <div className="flex justify-between items-center mb-2 gap-2">
@@ -364,6 +398,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
                                 animate={{ opacity: 1, scale: 1 }}
                                 draggable
                                 onDragStart={e => handleDragStart(e, task.id)}
+                                onDoubleClick={() => openEditModal(task)}
                                 className={`rounded-lg border shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-grab active:cursor-grabbing ${
                                   zone === 'done'
                                     ? 'bg-gray-100 border-stone-200 opacity-70'
@@ -421,7 +456,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
             <div className="flex items-center justify-between px-6 py-4 border-b-4 border-brand-dark-red bg-brand-dark-red">
               <div className="flex items-center gap-2">
                 <Zap size={24} className="text-amber-400" />
-                <h2 className="text-lg font-black text-white uppercase tracking-tight">Registrar Nova Atividade</h2>
+                <h2 className="text-lg font-black text-white uppercase tracking-tight">{editingTask ? 'Editar Atividade' : 'Registrar Nova Atividade'}</h2>
               </div>
               <button
                 onClick={closeModal}
@@ -500,6 +535,9 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
                           }`}>
                             {impact === 'critical' ? 'Crítico' : impact === 'medium' ? 'Médio' : 'Baixo'}
                           </div>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-32 p-2 bg-gray-900 text-white text-[10px] rounded shadow-lg z-50 text-center leading-tight">
+                            {impact === 'critical' ? 'Interrupção total ou risco grave de segurança.' : impact === 'medium' ? 'Impacto moderado; requer atenção em breve.' : 'Impacto mínimo; pode ser resolvido rotineiramente.'}
+                          </div>
                         </label>
                       ))}
                     </div>
@@ -525,6 +563,9 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
                               : 'text-gray-400'
                           }`}>
                             {urgency === 'immediate' ? 'Imediato' : urgency === 'planned' ? 'Planejado' : 'Estratégico'}
+                          </div>
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-32 p-2 bg-gray-900 text-white text-[10px] rounded shadow-lg z-50 text-center leading-tight">
+                            {urgency === 'immediate' ? 'Requer ação nas próximas 24 horas.' : urgency === 'planned' ? 'Execução conforme cronograma padrão.' : 'Alinhado a objetivos de longo prazo.'}
                           </div>
                         </label>
                       ))}
@@ -577,7 +618,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
                 className="px-6 py-2 text-xs font-black uppercase text-white bg-brand-dark-red rounded-lg shadow-lg shadow-brand-dark-red/30 hover:bg-brand-red transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 <Save size={14} />
-                Salvar no Backlog
+                {editingTask ? 'Salvar Alterações' : 'Salvar no Backlog'}
               </button>
             </div>
           </motion.div>

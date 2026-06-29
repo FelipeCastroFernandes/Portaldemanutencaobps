@@ -388,16 +388,16 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 // --- Mappers ---
 // Convert app profile values to Supabase enum
 function profileToDb(profile: string | undefined): string {
-  if (!profile) return 'visualizacao';
-  // Map app profiles to database enum value
-  // Currently the database only has 'visualizacao' enum value
-  return 'visualizacao';
+  if (!profile) return 'Solicitante';
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return profile;
+  return 'Solicitante';
 }
 
 // Convert Supabase profile values to app format
 function profileFromDb(dbProfile: string | undefined): string {
-  if (!dbProfile || dbProfile === 'visualizacao') return 'Solicitante';
-  return dbProfile;
+  if (!dbProfile) return 'Solicitante';
+  if (dbProfile === 'Gestor' || dbProfile === 'Planejador' || dbProfile === 'Solicitante') return dbProfile;
+  return 'Solicitante';
 }
 
 function dbUserToLocalMap(dbRow: any): User {
