@@ -13,8 +13,10 @@ COMMIT;
 
 -- PASSO 3: Recriar enum removendo valores antigos (execute após o PASSO 2)
 BEGIN;
+ALTER TABLE public.users ALTER COLUMN profile DROP DEFAULT;
 ALTER TYPE public.profile_level RENAME TO profile_level_old;
 CREATE TYPE public.profile_level AS ENUM ('Gestor', 'Planejador', 'visualização');
 ALTER TABLE public.users ALTER COLUMN profile TYPE public.profile_level USING profile::text::public.profile_level;
+ALTER TABLE public.users ALTER COLUMN profile SET DEFAULT 'visualização';
 DROP TYPE IF EXISTS profile_level_old;
 COMMIT;
