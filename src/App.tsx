@@ -139,10 +139,11 @@ export default function App() {
       return (matchEmail || matchUsername || legacyUsernameMatch) && u.password === loginData.password;
     });
     if (user) {
+      const normalized = normalizeUserProfile(user);
       setIsAuthenticated(true);
-      setCurrentUser(user);
+      setCurrentUser(normalized);
       sessionStorage.setItem('bps_auth', 'true');
-      sessionStorage.setItem('bps_auth_user', JSON.stringify(user));
+      sessionStorage.setItem('bps_auth_user', JSON.stringify(normalized));
       return true;
     } else {
       return false;
