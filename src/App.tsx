@@ -23,8 +23,8 @@ import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteAp
 
 function normalizeUserProfile(user: User): User {
   const profile = user.profile as string;
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return user;
-  return { ...user, profile: profile === 'gestao' ? 'Gestor' : 'Solicitante' };
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return user;
+  return { ...user, profile: profile === 'gestao' ? 'Gestor' : 'visualização' };
 }
 
 export default function App() {
@@ -73,7 +73,7 @@ export default function App() {
           password: '123',
           team: 'Manutenção',
           role: 'Técnico',
-          profile: 'Solicitante',
+          profile: 'visualização',
           createdAt: new Date().toISOString()
         };
 
@@ -107,7 +107,7 @@ export default function App() {
           password: '123',
           team: 'Manutenção',
           role: 'Técnico',
-          profile: 'Solicitante',
+          profile: 'visualização',
           createdAt: new Date().toISOString()
         };
         setUsers([defaultAdmin, defaultTeste]);

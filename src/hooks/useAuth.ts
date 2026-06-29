@@ -1,9 +1,10 @@
 import { ProfileLevel, User } from '../types';
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return profile;
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
   if (profile === 'gestao') return 'Gestor';
-  return 'Solicitante';
+  if (profile === 'Solicitante') return 'visualização';
+  return 'visualização';
 }
 
 export function useAuth() {

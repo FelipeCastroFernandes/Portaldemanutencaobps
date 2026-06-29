@@ -5,13 +5,13 @@ BEGIN
         CREATE TYPE equipment_type AS ENUM ('escadas', 'elevadores');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'profile_level') THEN
-        CREATE TYPE profile_level AS ENUM ('Gestor', 'Planejador', 'Solicitante');
+        CREATE TYPE profile_level AS ENUM ('Gestor', 'Planejador', 'visualização');
     END IF;
 END $$;
 
 ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Gestor';
 ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Planejador';
-ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'Solicitante';
+ALTER TYPE profile_level ADD VALUE IF NOT EXISTS 'visualização';
 
 -- Table: public.users
 CREATE TABLE IF NOT EXISTS public.users (
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   photo TEXT,
   team TEXT NOT NULL,
   role TEXT NOT NULL,
-  profile profile_level NOT NULL DEFAULT 'Solicitante',
+  profile profile_level NOT NULL DEFAULT 'visualização',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

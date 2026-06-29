@@ -387,7 +387,7 @@ export default function OccurrenceModal({
                       ))}
                     </select>
                   ) : (
-                    // Solicitante vê apenas seu nome (desabilitado)
+                    // Visualização vê apenas seu nome (desabilitado)
                     <input
                       type="text"
                       disabled

@@ -388,16 +388,18 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 // --- Mappers ---
 // Convert app profile values to Supabase enum
 function profileToDb(profile: string | undefined): string {
-  if (!profile) return 'Solicitante';
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return profile;
-  return 'Solicitante';
+  if (!profile) return 'visualização';
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
+  if (profile === 'Solicitante') return 'visualização';
+  return 'visualização';
 }
 
 // Convert Supabase profile values to app format
 function profileFromDb(dbProfile: string | undefined): string {
-  if (!dbProfile) return 'Solicitante';
-  if (dbProfile === 'Gestor' || dbProfile === 'Planejador' || dbProfile === 'Solicitante') return dbProfile;
-  return 'Solicitante';
+  if (!dbProfile) return 'visualização';
+  if (dbProfile === 'Gestor' || dbProfile === 'Planejador' || dbProfile === 'visualização') return dbProfile;
+  if (dbProfile === 'Solicitante') return 'visualização';
+  return 'visualização';
 }
 
 function dbUserToLocalMap(dbRow: any): User {
@@ -409,15 +411,16 @@ function dbUserToLocalMap(dbRow: any): User {
     photo: dbRow.photo,
     team: dbRow.team || '',
     role: dbRow.role || '',
-    profile: profileFromDb(dbRow.profile) || 'Solicitante',
+    profile: profileFromDb(dbRow.profile) || 'visualização',
     createdAt: dbRow.created_at || dbRow.createdAt || new Date().toISOString(),
   });
 }
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'Solicitante') return profile;
+  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
   if (profile === 'gestao') return 'Gestor';
-  return 'Solicitante';
+  if (profile === 'Solicitante') return 'visualização';
+  return 'visualização';
 }
 
 function normalizeUserProfile(user: User): User {

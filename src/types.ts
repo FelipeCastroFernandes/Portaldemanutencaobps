@@ -5,7 +5,7 @@
 
 export type EquipmentType = 'escadas' | 'elevadores';
 
-export type ProfileLevel = 'Gestor' | 'Planejador' | 'Solicitante';
+export type ProfileLevel = 'Gestor' | 'Planejador' | 'visualização';
 
 export type TaskStatus = 'backlog' | 'todo' | 'doing' | 'done';
 export type TaskImpact = 'low' | 'medium' | 'critical';
