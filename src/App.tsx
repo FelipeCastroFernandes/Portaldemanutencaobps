@@ -55,6 +55,13 @@ export default function App() {
         const hasAdmin = loadedUsers.some(u => u.email?.toLowerCase() === 'admin@botafogopraia.com.br');
         const hasTeste = loadedUsers.some(u => u.email?.toLowerCase() === 'teste@botafogopraia.com.br');
 
+        // Ensure admin user has Gestor profile (fix for users migrated from old 'visualizacao')
+        const adminIdx = loadedUsers.findIndex(u => u.email?.toLowerCase() === 'admin@botafogopraia.com.br');
+        if (adminIdx >= 0 && loadedUsers[adminIdx].profile !== 'Gestor') {
+          loadedUsers[adminIdx] = { ...loadedUsers[adminIdx], profile: 'Gestor' as ProfileLevel };
+          updateApiUser(loadedUsers[adminIdx]).catch(console.error);
+        }
+
         const defaultAdmin: User = { 
           id: 'admin',
           fullName: 'Administrador',
