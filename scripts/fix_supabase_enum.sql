@@ -1,32 +1,21 @@
--- Execute este SQL no SQL Editor do Supabase Dashboard (https://supabase.com/dashboard)
--- Isso irá:
--- 1. Adicionar os novos valores ao enum profile_level
--- 2. Atualizar todos os registros existentes
--- 3. Remover os valores antigos do enum
-
-BEGIN;
-
--- 1. Adicionar os novos valores ao enum existente
+-- PASSO 1: Adicionar novos valores ao enum (commit necessário antes de usar)
 ALTER TYPE public.profile_level ADD VALUE IF NOT EXISTS 'Gestor';
 ALTER TYPE public.profile_level ADD VALUE IF NOT EXISTS 'Planejador';
 ALTER TYPE public.profile_level ADD VALUE IF NOT EXISTS 'visualização';
+-- Execute este bloco sozinho primeiro, depois o PASSO 2
 
--- 2. Atualizar registros existentes
+-- PASSO 2: Atualizar registros (execute após o PASSO 1)
+BEGIN;
 UPDATE public.users SET profile = 'Gestor' WHERE profile = 'gestao';
 UPDATE public.users SET profile = 'visualização' WHERE profile = 'visualizacao';
-
--- 3. Verificar se há registros com 'Solicitante' (caso existam)
 UPDATE public.users SET profile = 'visualização' WHERE profile = 'Solicitante';
+COMMIT;
+-- Execute este bloco sozinho, depois o PASSO 3
 
--- 4. Recriar o enum removendo valores antigos e Solicitante
+-- PASSO 3: Recriar enum removendo valores antigos (execute após o PASSO 2)
+BEGIN;
 ALTER TYPE public.profile_level RENAME TO profile_level_old;
-
 CREATE TYPE public.profile_level AS ENUM ('Gestor', 'Planejador', 'visualização');
-
-ALTER TABLE public.users 
-  ALTER COLUMN profile TYPE public.profile_level 
-  USING profile::text::public.profile_level;
-
+ALTER TABLE public.users ALTER COLUMN profile TYPE public.profile_level USING profile::text::public.profile_level;
 DROP TYPE IF EXISTS profile_level_old;
-
 COMMIT;
