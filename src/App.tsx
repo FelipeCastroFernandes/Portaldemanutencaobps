@@ -8,7 +8,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LogIn, ArrowLeft, ChevronRight, BarChart3, Settings, PlusCircle } from 'lucide-react';
 import { INITIAL_ESCADA_DATA, INITIAL_ELEVADOR_DATA, MESES_ORDEM } from './data/initialData';
-import { MaintenanceRecord, EquipmentType, Occurrence, User } from './types';
+import { MaintenanceRecord, EquipmentType, Occurrence, User, ProfileLevel } from './types';
 import DashboardView from './components/DashboardView';
 import DashboardCover from './components/DashboardCover';
 import MainPortal from './components/MainPortal';
