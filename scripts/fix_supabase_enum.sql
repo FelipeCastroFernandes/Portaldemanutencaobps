@@ -8,7 +8,6 @@ ALTER TYPE public.profile_level ADD VALUE IF NOT EXISTS 'visualização';
 BEGIN;
 UPDATE public.users SET profile = 'Gestor' WHERE profile = 'gestao';
 UPDATE public.users SET profile = 'visualização' WHERE profile = 'visualizacao';
-UPDATE public.users SET profile = 'visualização' WHERE profile = 'Solicitante';
 COMMIT;
 -- Execute este bloco sozinho, depois o PASSO 3
 
