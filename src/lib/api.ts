@@ -399,6 +399,7 @@ function profileFromDb(dbProfile: string | undefined): string {
   if (!dbProfile) return 'visualização';
   if (dbProfile === 'Gestor' || dbProfile === 'Planejador' || dbProfile === 'visualização') return dbProfile;
   if (dbProfile === 'Solicitante') return 'visualização';
+  if (dbProfile === 'gestao') return 'Gestor';
   return 'visualização';
 }
 
