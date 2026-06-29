@@ -18,6 +18,9 @@ interface MainPortalProps {
 }
 
 export default function MainPortal({ onEscadas, onElevadores, onOrders, onTasks, onManageUsers, onLogout, currentUser }: MainPortalProps) {
+  console.log('[MainPortal] currentUser:', currentUser?.email, 'profile:', currentUser?.profile, '| len:', currentUser?.profile?.length);
+  console.log('[MainPortal] check Gestor:', currentUser?.profile === 'Gestor');
+  console.log('[MainPortal] check Planejador:', currentUser?.profile === 'Planejador');
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-brand-dark-red p-6 text-center relative overflow-hidden pt-24 sm:pt-6">
       {/* Background Decor */}
