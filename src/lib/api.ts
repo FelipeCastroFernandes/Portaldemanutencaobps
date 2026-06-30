@@ -386,20 +386,20 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 }
 
 // --- Mappers ---
-// Convert app profile values to Supabase enum
 function profileToDb(profile: string | undefined): string {
   if (!profile) return 'visualização';
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
-  if (profile === 'Solicitante') return 'visualização';
+  const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (p === 'gestor' || p === 'gestao') return 'Gestor';
+  if (p === 'planejador') return 'Planejador';
   return 'visualização';
 }
 
 // Convert Supabase profile values to app format
 function profileFromDb(dbProfile: string | undefined): string {
   if (!dbProfile) return 'visualização';
-  if (dbProfile === 'Gestor' || dbProfile === 'Planejador' || dbProfile === 'visualização') return dbProfile;
-  if (dbProfile === 'Solicitante') return 'visualização';
-  if (dbProfile === 'gestao') return 'Gestor';
+  const p = dbProfile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (p === 'gestor' || p === 'gestao') return 'Gestor';
+  if (p === 'planejador') return 'Planejador';
   return 'visualização';
 }
 
@@ -418,9 +418,10 @@ function dbUserToLocalMap(dbRow: any): User {
 }
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
-  if (profile === 'gestao') return 'Gestor';
-  if (profile === 'Solicitante') return 'visualização';
+  if (!profile) return 'visualização';
+  const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (p === 'gestor' || p === 'gestao') return 'Gestor';
+  if (p === 'planejador') return 'Planejador';
   return 'visualização';
 }
 

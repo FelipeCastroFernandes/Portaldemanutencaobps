@@ -23,8 +23,11 @@ import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteAp
 
 function normalizeUserProfile(user: User): User {
   const profile = user.profile as string;
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return user;
-  return { ...user, profile: profile === 'gestao' ? 'Gestor' : 'visualização' };
+  if (!profile) return { ...user, profile: 'visualização' };
+  const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (p === 'gestor' || p === 'gestao') return { ...user, profile: 'Gestor' };
+  if (p === 'planejador') return { ...user, profile: 'Planejador' };
+  return { ...user, profile: 'visualização' };
 }
 
 export default function App() {

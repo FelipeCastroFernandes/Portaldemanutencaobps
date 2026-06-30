@@ -1,9 +1,10 @@
 import { ProfileLevel, User } from '../types';
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (profile === 'Gestor' || profile === 'Planejador' || profile === 'visualização') return profile;
-  if (profile === 'gestao') return 'Gestor';
-  if (profile === 'Solicitante') return 'visualização';
+  if (!profile) return 'visualização';
+  const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (p === 'gestor' || p === 'gestao') return 'Gestor';
+  if (p === 'planejador') return 'Planejador';
   return 'visualização';
 }
 
