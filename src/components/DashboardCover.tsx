@@ -4,7 +4,7 @@
  */
 
 import { motion } from 'motion/react';
-import { Power, BarChart3, Settings, PlusCircle, ArrowLeft, ClipboardList, ArrowUpToLine, ArrowUpRight } from 'lucide-react';
+import { Power, PlusCircle, ArrowLeft, ClipboardList, ArrowUpToLine, ArrowUpRight } from 'lucide-react';
 import { Occurrence } from '../types';
 import { ELEVADORES_LIST, ESCADAS_LIST } from '../data/initialData';
 

@@ -5,9 +5,9 @@
 
 import React, { useMemo } from 'react';
 import { 
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
+  BarChart, Bar, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  ComposedChart, ReferenceLine 
+  ComposedChart 
 } from 'recharts';
 import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
 import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';

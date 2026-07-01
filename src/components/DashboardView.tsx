@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Filter, AlertTriangle, TrendingUp, Hash, Clock, Check, ChevronDown, Plus } from 'lucide-react';
+import { Filter, AlertTriangle, TrendingUp, Hash, Clock, Check, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
 import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';

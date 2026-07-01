@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogIn, Lock, Mail, UserPlus } from 'lucide-react';
+import { LogIn, Lock, Mail } from 'lucide-react';
 import { User } from '../types';
 
 interface LoginProps {
