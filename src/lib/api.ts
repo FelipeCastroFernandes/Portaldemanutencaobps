@@ -160,10 +160,17 @@ export async function getOccurrences(): Promise<Occurrence[]> {
   try {
     if (isSupabaseConfigured() && supabase) {
       const { data, error } = await supabase.from('occurrences').select('*').order('start_time', { ascending: false });
-      if (!error && data) {
+      if (error) {
+        console.error('[getOccurrences] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+      } else if (data) {
+        console.log('[getOccurrences] Successfully fetched', data.length, 'occurrences from Supabase');
         return data.map(dbOccurrenceToLocalMap);
       }
-      console.warn("Supabase query occurrences error, using local fallback:", error);
     }
   } catch (e) {
     console.warn("Failed fetching occurrences from Supabase, using local fallback:", e);
@@ -191,13 +198,20 @@ export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence
         closed_by: occurrence.closedBy || null,
       }).select().single();
       
-      if (!error && data) {
+      if (error) {
+        console.error('[saveOccurrence] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+      } else if (data) {
+        console.log('[saveOccurrence] Successfully saved to Supabase:', data);
         const localOcc = dbOccurrenceToLocalMap(data);
         _mockOccurrences.push(localOcc);
         saveLocal();
         return localOcc;
       }
-      console.warn("Supabase saveOccurrence error, using local fallback:", error);
     }
   } catch (e) {
     console.warn("Failed saving occurrence to Supabase, using local fallback:", e);
@@ -267,10 +281,17 @@ export async function getTasks(): Promise<Task[]> {
   try {
     if (isSupabaseConfigured() && supabase) {
       const { data, error } = await supabase.from('tasks').select('*').order('score', { ascending: false });
-      if (!error && data) {
+      if (error) {
+        console.error('[getTasks] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+      } else if (data) {
+        console.log('[getTasks] Successfully fetched', data.length, 'tasks from Supabase');
         return data.map(dbTaskToLocalMap);
       }
-      console.warn("Supabase query tasks error, using local fallback:", error);
     }
   } catch (e) {
     console.warn("Failed fetching tasks from Supabase, using local fallback:", e);
@@ -294,13 +315,20 @@ export async function saveTask(task: Task): Promise<Task> {
         archived_at: task.archivedAt || null,
       }).select().single();
 
-      if (!error && data) {
+      if (error) {
+        console.error('[saveTask] Supabase error:', {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+      } else if (data) {
+        console.log('[saveTask] Successfully saved to Supabase:', data);
         const localTask = dbTaskToLocalMap(data);
         _mockTasks.push(localTask);
         saveLocal();
         return localTask;
       }
-      console.warn("Supabase saveTask error, using local fallback:", error);
     }
   } catch (e) {
     console.warn("Failed saving task to Supabase, using local fallback:", e);
