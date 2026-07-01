@@ -55,45 +55,11 @@ export default function App() {
 
         let loadedUsers = [...dbUsers];
 
-        const hasAdmin = loadedUsers.some(u => u.email?.toLowerCase() === 'admin@botafogopraia.com.br');
-        const hasTeste = loadedUsers.some(u => u.email?.toLowerCase() === 'teste@botafogopraia.com.br');
-
         // Ensure admin user has Gestor profile (fix for users migrated from old 'visualizacao')
         const adminIdx = loadedUsers.findIndex(u => u.email?.toLowerCase() === 'admin@botafogopraia.com.br');
         if (adminIdx >= 0 && loadedUsers[adminIdx].profile !== 'Gestor') {
           loadedUsers[adminIdx] = { ...loadedUsers[adminIdx], profile: 'Gestor' as ProfileLevel };
           updateApiUser(loadedUsers[adminIdx]).catch(console.error);
-        }
-
-        const defaultAdmin: User = { 
-          id: 'admin',
-          fullName: 'Administrador',
-          email: 'admin@botafogopraia.com.br', 
-          password: 'bps',
-          team: 'TI',
-          role: 'Administrador',
-          profile: 'Gestor',
-          createdAt: new Date().toISOString()
-        };
-
-        const defaultTeste: User = { 
-          id: 'teste',
-          fullName: 'Usuário de Teste',
-          email: 'teste@botafogopraia.com.br', 
-          password: '123',
-          team: 'Manutenção',
-          role: 'Técnico',
-          profile: 'visualização',
-          createdAt: new Date().toISOString()
-        };
-
-        if (!hasAdmin) {
-          loadedUsers.push(defaultAdmin);
-          saveUser(defaultAdmin).catch(console.error);
-        }
-        if (!hasTeste) {
-          loadedUsers.push(defaultTeste);
-          saveUser(defaultTeste).catch(console.error);
         }
 
         setUsers(loadedUsers);
