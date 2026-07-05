@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Zap, X, Clock, User, ChevronDown, Save, Plus, Search, AlertTriangle, Award, Calendar, CheckCircle, ClipboardList, Maximize2, Minimize2, Trash2 } from 'lucide-react';
+import { ArrowLeft, ClipboardList, X, Clock, User, ChevronDown, Save, Plus, Search, AlertTriangle, Award, Calendar, CheckCircle, Maximize2, Minimize2, Trash2 } from 'lucide-react';
 import { Task } from '../types';
 import { getTasks, saveTask, updateTask, archiveDoneTasks } from '../lib/api';
 
@@ -224,7 +224,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
             </button>
             <div className="h-6 w-px bg-white/20" />
             <div className="flex items-center gap-2">
-              <Zap size={22} className="text-amber-400" />
+              <ClipboardList size={22} className="text-amber-400" />
               <h1 className="font-black text-lg uppercase tracking-tighter">Painel de Tarefas</h1>
             </div>
           </div>
@@ -455,7 +455,7 @@ export default function TaskManagementView({ onBack }: TaskManagementViewProps) 
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b-4 border-brand-dark-red bg-brand-dark-red">
               <div className="flex items-center gap-2">
-                <Zap size={24} className="text-amber-400" />
+                <ClipboardList size={24} className="text-amber-400" />
                 <h2 className="text-lg font-black text-white uppercase tracking-tight">{editingTask ? 'Editar Atividade' : 'Registrar Nova Atividade'}</h2>
               </div>
               <button
