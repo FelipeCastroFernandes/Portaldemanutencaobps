@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Eye,
   X,
-  FileText
+  FileText,
+  Pencil
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from './PageHeader';
@@ -37,6 +38,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [filterType, setFilterType] = useState<'all' | 'escadas' | 'elevadores'>('all');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
+  const [editingOccId, setEditingOccId] = useState<string | null>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Occurrence | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -50,6 +52,54 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   });
 
   const [returnFormData, setReturnFormData] = useState(getInitialReturnFormData());
+
+  const getInitialEditFormData = (occ: Occurrence) => ({
+    type: occ.type,
+    equip: occ.equip,
+    callNumber: occ.callNumber,
+    attendant: occ.attendant,
+    createdBy: occ.createdBy || '',
+    startDate: new Date(occ.start).toISOString().split('T')[0],
+    startTime: new Date(occ.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    technician: occ.technician || '',
+    reason: occ.reason || '',
+    causa_parada: occ.causa_parada || '',
+    closedBy: occ.closedBy || '',
+    endDate: occ.end ? new Date(occ.end).toISOString().split('T')[0] : '',
+    endTime: occ.end ? new Date(occ.end).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '',
+  });
+
+  const [editFormData, setEditFormData] = useState(getInitialEditFormData({} as Occurrence));
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOccId) return;
+
+    const occ = occurrences.find(o => o.id === editingOccId);
+    if (!occ) return;
+
+    onUpdate({
+      ...occ,
+      type: editFormData.type,
+      equip: editFormData.equip,
+      callNumber: editFormData.callNumber,
+      attendant: editFormData.attendant,
+      createdBy: editFormData.createdBy,
+      start: `${editFormData.startDate}T${editFormData.startTime}:00${getLocalTimezoneOffset()}`,
+      end: editFormData.endDate ? `${editFormData.endDate}T${editFormData.endTime}:00${getLocalTimezoneOffset()}` : undefined,
+      technician: editFormData.technician || undefined,
+      reason: editFormData.reason || undefined,
+      causa_parada: editFormData.causa_parada || undefined,
+      closedBy: editFormData.closedBy || undefined,
+    });
+
+    setEditingOccId(null);
+  };
+
+  const handleOpenEditForm = (order: Occurrence) => {
+    setEditFormData(getInitialEditFormData(order));
+    setEditingOccId(order.id);
+  };
 
   const handleReturnSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -459,6 +509,18 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
+                                handleOpenEditForm(order);
+                              }}
+                              className="p-3 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all active:scale-95 shadow-sm"
+                              title="Editar Chamado"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                          )}
+                          {currentUser?.profile === 'Gestor' && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setDeletingOccId(order.id);
                               }}
                               className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
@@ -790,6 +852,220 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                     className="flex-[2] py-5 bg-emerald-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-emerald-600/30 hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
                   >
                     Finalizar Ordem de Serviço
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        );
+      })()}
+
+      {/* Edit Modal Overlay */}
+      {editingOccId && occurrences.find(o => o.id === editingOccId) && (() => {
+        const occToEdit = occurrences.find(o => o.id === editingOccId)!;
+        return (
+          <div className="fixed inset-0 bg-brand-dark-red/90 backdrop-blur-md z-[120] flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden border-4 border-white/20 flex flex-col max-h-[90vh] my-auto"
+            >
+              <div className="p-8 md:p-10 bg-brand-dark-red text-white flex justify-between items-start shrink-0">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 mb-2 block">Gestão de Chamados</span>
+                  <h2 className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
+                    <Pencil size={32} className="text-amber-400" />
+                    Editar Chamado
+                  </h2>
+                  <div className="flex gap-2 mt-4">
+                    <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">#{occToEdit.callNumber}</span>
+                    <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{occToEdit.equip}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEditingOccId(null)}
+                  className="p-3 hover:bg-white/10 rounded-2xl transition-colors"
+                >
+                  <X size={24} className="text-white/30 hover:text-white" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="p-8 md:p-10 space-y-6 overflow-y-auto flex-1">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Tipo</label>
+                    <select
+                      required
+                      value={editFormData.type}
+                      onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value as 'escadas' | 'elevadores' })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
+                    >
+                      <option value="escadas">Escadas</option>
+                      <option value="elevadores">Elevadores</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Equipamento</label>
+                    <input 
+                      required
+                      type="text"
+                      value={editFormData.equip}
+                      onChange={(e) => setEditFormData({ ...editFormData, equip: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      placeholder="Nome do ativo"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Nº Chamado</label>
+                    <input 
+                      required
+                      type="text"
+                      value={editFormData.callNumber}
+                      onChange={(e) => setEditFormData({ ...editFormData, callNumber: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      placeholder="Número do chamado"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Atendente</label>
+                    <input 
+                      required
+                      type="text"
+                      value={editFormData.attendant}
+                      onChange={(e) => setEditFormData({ ...editFormData, attendant: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      placeholder="Nome do atendente"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Solicitante</label>
+                    <select
+                      required
+                      value={editFormData.createdBy}
+                      onChange={(e) => setEditFormData({ ...editFormData, createdBy: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
+                    >
+                      <option value="" disabled>Selecionar...</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Técnico</label>
+                    <input 
+                      type="text"
+                      value={editFormData.technician}
+                      onChange={(e) => setEditFormData({ ...editFormData, technician: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      placeholder="Nome do técnico"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Data de Abertura</label>
+                    <input 
+                      required
+                      type="date"
+                      value={editFormData.startDate}
+                      onChange={(e) => setEditFormData({ ...editFormData, startDate: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Hora de Abertura</label>
+                    <input 
+                      required
+                      type="time"
+                      value={editFormData.startTime}
+                      onChange={(e) => setEditFormData({ ...editFormData, startTime: e.target.value })}
+                      className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Causa de Parada</label>
+                  <select
+                    value={editFormData.causa_parada}
+                    onChange={(e) => setEditFormData({ ...editFormData, causa_parada: e.target.value })}
+                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
+                  >
+                    <option value="">Selecionar causa...</option>
+                    {(CAUSAS_PARADA_BY_TYPE[editFormData.type] || []).map(causa => (
+                      <option key={causa} value={causa}>{causa}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-brand-dark-red/40 tracking-widest pl-1">Motivo da Parada / Diagnóstico</label>
+                  <textarea 
+                    value={editFormData.reason}
+                    onChange={(e) => setEditFormData({ ...editFormData, reason: e.target.value })}
+                    className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all min-h-[100px] resize-none"
+                    placeholder="Descreva o motivo da parada..."
+                  />
+                </div>
+
+                <div className="space-y-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                  <span className="text-[10px] font-black uppercase text-amber-700/40 tracking-widest block">Dados de Conclusão</span>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-amber-700/40 tracking-widest pl-1">Data de Conclusão</label>
+                      <input 
+                        type="date"
+                        value={editFormData.endDate}
+                        onChange={(e) => setEditFormData({ ...editFormData, endDate: e.target.value })}
+                        className="w-full bg-white border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-amber-700/40 tracking-widest pl-1">Hora de Conclusão</label>
+                      <input 
+                        type="time"
+                        value={editFormData.endTime}
+                        onChange={(e) => setEditFormData({ ...editFormData, endTime: e.target.value })}
+                        className="w-full bg-white border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-amber-700/40 tracking-widest pl-1">Fechado Por</label>
+                    <select
+                      value={editFormData.closedBy}
+                      onChange={(e) => setEditFormData({ ...editFormData, closedBy: e.target.value })}
+                      className="w-full bg-white border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
+                    >
+                      <option value="">Selecionar...</option>
+                      {users.map(u => (
+                        <option key={u.id} value={u.fullName}>{u.fullName}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-6">
+                  <button 
+                    type="button"
+                    onClick={() => setEditingOccId(null)}
+                    className="flex-1 py-5 bg-brand-dark-red/5 text-brand-dark-red rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-brand-dark-red/10 transition-all active:scale-95"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-[2] py-5 bg-amber-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-amber-600/30 hover:bg-amber-700 transition-all hover:-translate-y-1 active:scale-95"
+                  >
+                    Salvar Alterações
                   </button>
                 </div>
               </form>

@@ -47,7 +47,7 @@ export const CAUSAS_PARADA_BY_TYPE: Record<EquipmentType, string[]> = {
   ],
   escadas: [
     'DEGRAUS',
-    'CORREMAO',
+    'CORRIMÃO',
     'CORRENTE DE DEGRAUS',
     'SENSORES DE SEGURANÇA',
     'PLACA DE PENTES',
