@@ -54,13 +54,13 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [returnFormData, setReturnFormData] = useState(getInitialReturnFormData());
 
   const getInitialEditFormData = (occ: Occurrence) => ({
-    type: occ.type,
-    equip: occ.equip,
-    callNumber: occ.callNumber,
-    attendant: occ.attendant,
+    type: occ.type || 'escadas',
+    equip: occ.equip || '',
+    callNumber: occ.callNumber || '',
+    attendant: occ.attendant || '',
     createdBy: occ.createdBy || '',
-    startDate: new Date(occ.start).toISOString().split('T')[0],
-    startTime: new Date(occ.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    startDate: occ.start ? new Date(occ.start).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    startTime: occ.start ? new Date(occ.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
     technician: occ.technician || '',
     reason: occ.reason || '',
     causa_parada: occ.causa_parada || '',
