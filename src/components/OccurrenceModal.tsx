@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { X, Plus, Calendar, Clock, User, Hash, CheckCircle2, History, AlertCircle, Trash2, PlusCircle, ClipboardList } from 'lucide-react';
 import { CAUSAS_PARADA_BY_TYPE, EquipmentType, Occurrence, User as UserType } from '../types';
 import { ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
+import { getLocalTimezoneOffset } from '../lib/utils';
 
 interface OccurrenceModalProps {
   isOpen: boolean;
@@ -89,7 +90,7 @@ export default function OccurrenceModal({
       callNumber: formData.callNumber,
       attendant: formData.attendant,
       createdBy: formData.createdBy,
-      start: `${formData.startDate}T${formData.startTime}:00`,
+      start: `${formData.startDate}T${formData.startTime}:00${getLocalTimezoneOffset()}`,
       is_equipment_stopped: formData.is_equipment_stopped,
     };
     
@@ -109,7 +110,7 @@ export default function OccurrenceModal({
 
     onUpdate({
       ...occ,
-      end: `${returnFormData.endDate}T${returnFormData.endTime}:00`,
+      end: `${returnFormData.endDate}T${returnFormData.endTime}:00${getLocalTimezoneOffset()}`,
       technician: returnFormData.technician,
       reason: returnFormData.reason,
       causa_parada: returnFormData.causa_parada,
@@ -532,7 +533,11 @@ export default function OccurrenceModal({
                       </div>
                     </div>
                   );
-                }).reverse()
+                }).sort((a, b) => {
+                  const dateA = a.end ? new Date(a.end).getTime() : new Date(a.start).getTime();
+                  const dateB = b.end ? new Date(b.end).getTime() : new Date(b.start).getTime();
+                  return dateB - dateA;
+                })
               )}
             </div>
           )}

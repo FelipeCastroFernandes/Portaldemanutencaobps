@@ -19,6 +19,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from './PageHeader';
 import { CAUSAS_PARADA_BY_TYPE, Occurrence, User as UserType } from '../types';
+import { getLocalTimezoneOffset } from '../lib/utils';
 
 interface ServiceOrdersViewProps {
   occurrences: Occurrence[];
@@ -59,7 +60,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
 
     onUpdate({
       ...occ,
-      end: `${returnFormData.endDate}T${returnFormData.endTime}:00`,
+      end: `${returnFormData.endDate}T${returnFormData.endTime}:00${getLocalTimezoneOffset()}`,
       technician: returnFormData.technician,
       reason: returnFormData.reason,
       causa_parada: returnFormData.causa_parada,
