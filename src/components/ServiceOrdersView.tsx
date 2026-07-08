@@ -147,6 +147,32 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
 
   const isPaused = (o: Occurrence) => !!o.extraScopeStart && !o.extraScopeEnd;
 
+  const getNetDowntimeMs = (occ: Occurrence): number => {
+    if (!occ.end) return 0;
+    const grossMs = Math.max(0, new Date(occ.end).getTime() - new Date(occ.start).getTime());
+    let extraMs = 0;
+    if (occ.extraScopeStart) {
+      const pauseStart = new Date(occ.extraScopeStart).getTime();
+      const pauseEnd = occ.extraScopeEnd
+        ? new Date(occ.extraScopeEnd).getTime()
+        : Date.now();
+      extraMs = Math.max(0, pauseEnd - pauseStart);
+    }
+    if (occ.extraScopeApprovalMs) {
+      extraMs = Math.max(extraMs, occ.extraScopeApprovalMs);
+    }
+    return Math.max(0, grossMs - extraMs);
+  };
+
+  const formatDowntime = (ms: number): string => {
+    const totalHours = Math.floor(ms / (1000 * 60 * 60));
+    const totalMinutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const totalSeconds = Math.floor((ms % (1000 * 60)) / 1000);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    return `${days}d ${String(hours).padStart(2, '0')}h ${String(totalMinutes).padStart(2, '0')}m`;
+  };
+
   const filteredOrders = useMemo(() => {
     return occurrences
       .filter(order => {
@@ -450,8 +476,9 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
               <div className="col-span-1">Tipo</div>
               <div className="col-span-2">Ativo</div>
               <div className="col-span-2">Aberto por</div>
-              <div className="col-span-3">Motivo</div>
-              <div className="col-span-3">Status</div>
+              <div className="col-span-2">Motivo</div>
+              <div className="col-span-2">Tempo Parado</div>
+              <div className="col-span-2">Status</div>
             </div>
 
             <AnimatePresence mode="popLayout">
@@ -500,15 +527,30 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                       </div>
 
                       {/* Motivo */}
-                      <div className="md:col-span-3 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6 min-w-0">
+                      <div className="md:col-span-2 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6 min-w-0">
                         <span className="text-[11px] font-black text-gray-800 truncate" title={order.reason || '-'}>
                           {order.causa_parada || '-'}
                         </span>
                         {order.reason && <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Causa</span>}
                       </div>
 
+                      {/* Tempo Parado */}
+                      <div className="md:col-span-2 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
+                        {order.end ? (
+                          <>
+                            <span className="text-[11px] font-black text-brand-dark-red">{formatDowntime(getNetDowntimeMs(order))}</span>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Indisponibilidade</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[11px] font-black text-gray-300">-</span>
+                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Indisponibilidade</span>
+                          </>
+                        )}
+                      </div>
+
                       {/* Status */}
-                      <div className="md:col-span-3 flex items-center justify-between gap-6 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
+                      <div className="md:col-span-2 flex items-center justify-between gap-6 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
                         <div className="w-full flex-1">
                           <div className="flex justify-between items-center mb-1">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${order.end ? 'text-emerald-600' : isPaused(order) ? 'text-amber-600' : 'text-amber-600'}`}>
