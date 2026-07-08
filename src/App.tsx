@@ -186,58 +186,57 @@ export default function App() {
       }, 0);
     };
 
-    const getMonthEnd = (date: Date): Date => {
-      return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-    };
-
     const splitDowntimeAcrossMonths = (occ: Occurrence): { mes: string; downtimeMs: number; chamados: number }[] => {
-      if (!occ.end || occ.is_equipment_stopped === false) return [];
+      if (!occ.end) return [];
 
       const extraMs = getExtraScopeApprovalMs(occ);
       const start = new Date(occ.start);
       const end = new Date(occ.end);
       const grossMs = Math.max(0, end.getTime() - start.getTime());
-      const totalDowntimeMs = Math.max(0, grossMs - extraMs);
-
-      if (totalDowntimeMs === 0) return [];
 
       const startMonth = start.getMonth();
-      const endMonth = end.getMonth();
       const startYear = start.getFullYear();
+      const endMonth = end.getMonth();
       const endYear = end.getFullYear();
 
+      if (occ.is_equipment_stopped === false) {
+        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
+      }
+
+      if (grossMs === 0) {
+        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
+      }
+
       if (startMonth === endMonth && startYear === endYear) {
-        const mes = MESES_ORDEM[startMonth];
-        return [{ mes, downtimeMs: totalDowntimeMs, chamados: 1 }];
+        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: grossMs - extraMs, chamados: 1 }];
       }
 
-      const result: { mes: string; downtimeMs: number; chamados: number }[] = [];
-      const monthEnd = getMonthEnd(start);
-      let msInStartMonth = Math.max(0, monthEnd.getTime() - start.getTime());
-      let msInEndMonth = Math.max(0, end.getTime() - new Date(end.getFullYear(), end.getMonth(), 1).getTime());
-      const msInBetween = totalDowntimeMs - msInStartMonth - msInEndMonth;
+      const overlapMs = (year: number, month: number): number => {
+        const monthStart = new Date(year, month, 1).getTime();
+        const monthEnd = new Date(year, month + 1, 1).getTime();
+        return Math.max(0, Math.min(end.getTime(), monthEnd) - Math.max(start.getTime(), monthStart));
+      };
 
-      if (msInStartMonth > 0) {
-        const ratio = msInStartMonth / (msInStartMonth + msInEndMonth + msInBetween);
-        result.push({ mes: MESES_ORDEM[startMonth], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 1 });
-      }
+      const months: { year: number; month: number; ms: number }[] = [];
+      let curYear = startYear;
+      let curMonth = startMonth;
+      let totalMs = 0;
 
-      if (msInBetween > 0) {
-        let cur = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-        while (cur.getTime() < new Date(end.getFullYear(), end.getMonth(), 1).getTime()) {
-          const fullMonthMs = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate() * 24 * 60 * 60 * 1000;
-          const ratio = fullMonthMs / (msInStartMonth + msInEndMonth + msInBetween);
-          result.push({ mes: MESES_ORDEM[cur.getMonth()], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 0 });
-          cur.setMonth(cur.getMonth() + 1);
+      while (curYear < endYear || (curYear === endYear && curMonth <= endMonth)) {
+        const ms = overlapMs(curYear, curMonth);
+        if (ms > 0) {
+          months.push({ year: curYear, month: curMonth, ms });
+          totalMs += ms;
         }
+        curMonth++;
+        if (curMonth === 12) { curMonth = 0; curYear++; }
       }
 
-      if (msInEndMonth > 0) {
-        const ratio = msInEndMonth / (msInStartMonth + msInEndMonth + msInBetween);
-        result.push({ mes: MESES_ORDEM[endMonth], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 0 });
-      }
-
-      return result;
+      return months.map((m, i) => ({
+        mes: MESES_ORDEM[m.month],
+        downtimeMs: Math.round(Math.max(0, m.ms - extraMs * (m.ms / totalMs))),
+        chamados: i === 0 ? 1 : 0,
+      }));
     };
 
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
@@ -267,9 +266,10 @@ export default function App() {
 
         const downtimeHours = value.downtimeMs / (1000 * 60 * 60);
         const chamados = value.chamados;
+        const effectiveChamados = Math.max(chamados, downtimeHours > 0 ? 1 : 0);
         const disp = Math.max(0, Math.min(100, ((totalHours - downtimeHours) / totalHours) * 100));
-        const mtbfHours = chamados > 0 ? (totalHours - downtimeHours) / chamados : totalHours;
-        const mttrHours = chamados > 0 ? downtimeHours / chamados : 0;
+        const mtbfHours = effectiveChamados > 0 ? (totalHours - downtimeHours) / effectiveChamados : totalHours;
+        const mttrHours = effectiveChamados > 0 ? downtimeHours / effectiveChamados : 0;
 
         const index = updatedData.findIndex(d => d.equip === equip && d.mes === mes);
         const newRecord: MaintenanceRecord = {
