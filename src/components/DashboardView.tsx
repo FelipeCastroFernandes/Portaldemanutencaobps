@@ -39,6 +39,17 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence, oc
     return result;
   }, [data, selectedMonths, selectedEquips]);
 
+  const filteredOccurrences = useMemo(() => {
+    let result = [...occurrences];
+    if (selectedMonths.length > 0) {
+      result = result.filter(o => selectedMonths.includes(MESES_ORDEM[new Date(o.start).getMonth()]));
+    }
+    if (selectedEquips.length > 0) {
+      result = result.filter(o => selectedEquips.includes(o.equip));
+    }
+    return result;
+  }, [occurrences, selectedMonths, selectedEquips]);
+
   const kpis = useMemo(() => {
     const totalChamados = filteredData.reduce((acc, curr) => acc + curr.chamados, 0);
     const mediaDisp = filteredData.length > 0 
@@ -251,7 +262,7 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence, oc
           allData={data}
           selectedEquips={selectedEquips}
           selectedMonths={selectedMonths}
-          occurrences={occurrences}
+          occurrences={filteredOccurrences}
         />
     </div>
   );

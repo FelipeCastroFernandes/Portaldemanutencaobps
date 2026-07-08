@@ -48,9 +48,7 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
   }, [occurrences, equipmentType]);
 
   // Dynamic title based on equipmentType
-  const chartTitle = `Principais Causas de Parada - ${
-    equipmentType === 'escadas' ? 'Escadas Rolantes' : 'Elevadores'
-  }`;
+  const chartTitle = `Principais Causas de Parada`;
 
   return (
     <div className="h-full flex flex-col min-h-[300px] bg-white p-6 rounded-[24px] shadow-xl border border-brand-dark-red/5">
