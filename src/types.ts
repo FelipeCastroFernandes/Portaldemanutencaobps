@@ -96,6 +96,8 @@ export interface Occurrence {
   is_equipment_stopped?: boolean;
   statusHistory?: OccurrenceStatusPeriod[];
   extraScopeApprovalMs?: number;
+  extraScopeStart?: string; // ISO string - when the extra scope pause started
+  extraScopeEnd?: string; // ISO string - when the extra scope pause ended
   closedBy?: string; // User who registered the closure
 }
 

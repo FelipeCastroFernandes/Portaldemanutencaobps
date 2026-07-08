@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Plus, Calendar, Clock, User, Hash, CheckCircle2, History, AlertCircle, Trash2, PlusCircle, ClipboardList } from 'lucide-react';
+import { X, Plus, Calendar, Clock, User, Hash, CheckCircle2, History, AlertCircle, Trash2, PlusCircle, ClipboardList, PauseCircle, Play } from 'lucide-react';
 import { CAUSAS_PARADA_BY_TYPE, EquipmentType, Occurrence, User as UserType } from '../types';
 import { ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
 import { getLocalTimezoneOffset } from '../lib/utils';
@@ -108,13 +108,16 @@ export default function OccurrenceModal({
     const occ = occurrences.find(o => o.id === closingOccId);
     if (!occ) return;
 
+    const endIso = `${returnFormData.endDate}T${returnFormData.endTime}:00${getLocalTimezoneOffset()}`;
+
     onUpdate({
       ...occ,
-      end: `${returnFormData.endDate}T${returnFormData.endTime}:00${getLocalTimezoneOffset()}`,
+      end: endIso,
       technician: returnFormData.technician,
       reason: returnFormData.reason,
       causa_parada: returnFormData.causa_parada,
       closedBy: returnFormData.closedBy,
+      extraScopeEnd: occ.extraScopeStart && !occ.extraScopeEnd ? endIso : occ.extraScopeEnd,
     });
 
     setClosingOccId(null);
@@ -132,6 +135,24 @@ export default function OccurrenceModal({
        endTime: getInitialTime(),
      });
    };
+
+   const handlePauseExtraScope = (occ: Occurrence) => {
+     onUpdate({
+       ...occ,
+       extraScopeStart: new Date().toISOString(),
+     });
+   };
+
+   const handleResumeExtraScope = (occ: Occurrence) => {
+     onUpdate({
+       ...occ,
+       extraScopeEnd: new Date().toISOString(),
+     });
+   };
+
+   const canManage = currentUser?.profile === 'Gestor' || currentUser?.profile === 'Planejador';
+
+   const isPaused = (occ: Occurrence) => !!occ.extraScopeStart && !occ.extraScopeEnd;
 
   if (!isOpen) return null;
 
@@ -471,9 +492,9 @@ export default function OccurrenceModal({
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isClosed ? 'bg-green-100 text-green-700' : 'bg-brand-red/10 text-brand-red animate-pulse'}`}>
-                              {isClosed ? 'Concluído' : 'Em Aberto'}
-                            </span>
+<span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isClosed ? 'bg-green-100 text-green-700' : isPaused(occ) ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-brand-red/10 text-brand-red animate-pulse'}`}>
+  {isClosed ? 'Concluído' : isPaused(occ) ? 'Aguardando Aprovação' : 'Em Aberto'}
+</span>
                             <span className="text-[10px] font-black uppercase text-text-muted bg-gray-100 px-2 py-0.5 rounded-full">
                               {occ.equip}
                             </span>
@@ -522,12 +543,31 @@ export default function OccurrenceModal({
                               </p>
                             </div>
                           ) : (
-                            <button 
-                              onClick={() => handleOpenReturnForm(occ.id)}
-                              className="bg-brand-red text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark-red transition-colors flex items-center gap-1.5"
-                            >
-                              Registrar Retorno <CheckCircle2 size={12} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {canManage && (
+                                isPaused(occ) ? (
+                                  <button
+                                    onClick={() => handleResumeExtraScope(occ)}
+                                    className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-colors flex items-center gap-1.5"
+                                  >
+                                    <Play size={12} /> Retomar Atendimento
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handlePauseExtraScope(occ)}
+                                    className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-colors flex items-center gap-1.5"
+                                  >
+                                    <PauseCircle size={12} /> Pausar: Escopo Extra
+                                  </button>
+                                )
+                              )}
+                              <button 
+                                onClick={() => handleOpenReturnForm(occ.id)}
+                                className="bg-brand-red text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark-red transition-colors flex items-center gap-1.5"
+                              >
+                                Registrar Retorno <CheckCircle2 size={12} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>

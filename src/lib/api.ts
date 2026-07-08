@@ -195,6 +195,8 @@ export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence
         is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
         status_history: occurrence.statusHistory || null,
         extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
+        extra_scope_start: occurrence.extraScopeStart || null,
+        extra_scope_end: occurrence.extraScopeEnd || null,
         closed_by: occurrence.closedBy || null,
       }).select().single();
       
@@ -240,6 +242,8 @@ export async function updateOccurrence(occurrence: Occurrence): Promise<Occurren
         is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
         status_history: occurrence.statusHistory || null,
         extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
+        extra_scope_start: occurrence.extraScopeStart || null,
+        extra_scope_end: occurrence.extraScopeEnd || null,
         closed_by: occurrence.closedBy || null,
       }).eq('id', occurrence.id).select().single();
       
@@ -476,6 +480,8 @@ function dbOccurrenceToLocalMap(dbRow: any): Occurrence {
     is_equipment_stopped: dbRow.is_equipment_stopped ?? dbRow.isEquipmentStopped,
     statusHistory: dbRow.status_history || dbRow.statusHistory,
     extraScopeApprovalMs: Number(dbRow.extra_scope_approval_ms || dbRow.extraScopeApprovalMs || 0) || undefined,
+    extraScopeStart: dbRow.extra_scope_start || dbRow.extraScopeStart || undefined,
+    extraScopeEnd: dbRow.extra_scope_end || dbRow.extraScopeEnd || undefined,
     closedBy: dbRow.closed_by || dbRow.closedBy,
   };
 }

@@ -170,6 +170,14 @@ export default function App() {
   // Recalculate indicators based on occurrences
   const processedData = useMemo(() => {
     const getExtraScopeApprovalMs = (occ: Occurrence) => {
+      if (occ.extraScopeStart) {
+        const pauseStart = new Date(occ.extraScopeStart).getTime();
+        const pauseEnd = occ.extraScopeEnd
+          ? new Date(occ.extraScopeEnd).getTime()
+          : Date.now();
+        return Math.max(0, pauseEnd - pauseStart);
+      }
+
       if (occ.extraScopeApprovalMs) return occ.extraScopeApprovalMs;
 
       return (occ.statusHistory || []).reduce((total, period) => {
