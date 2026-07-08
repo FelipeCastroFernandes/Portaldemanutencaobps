@@ -71,26 +71,18 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
 
               {/* Bar Container */}
               <div className="flex-1 flex items-center gap-2">
-                {/* Horizontal Bar - Increased height */}
-                <div className="flex-1 h-10 bg-gray-100 rounded-r-full overflow-hidden relative">
+                {/* Horizontal Bar */}
+                <div className="flex-1 h-10 bg-gray-100 rounded overflow-hidden relative">
                   <div
-                    className="h-full bg-[#7A1919] rounded-r-full transition-all duration-500 ease-out flex items-center justify-end pr-3"
+                    className="h-full bg-[#7A1919] rounded transition-all duration-500 ease-out flex items-center justify-end pr-3"
                     style={{ width: `${cause.percentage}%`, minWidth: '2px' }}
                   >
-                    {/* Optional: Inner text for larger bars */}
                     {cause.percentage > 20 && (
                       <span className="text-[10px] font-bold text-white truncate">
                         {cause.count}
                       </span>
                     )}
                   </div>
-                </div>
-
-                {/* Count Badge - Larger */}
-                <div className="w-14 text-right flex-shrink-0">
-                  <span className="text-sm font-black text-brand-dark-red">
-                    {cause.count}
-                  </span>
                 </div>
               </div>
             </div>
