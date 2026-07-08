@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
@@ -26,6 +26,7 @@ interface StatsChartsProps {
 const COLORS = ['#79030f', '#ab0303', '#b76058', '#d4c2ae', '#4a0209', '#e8877e', '#2b2b2b', '#942b2b'];
 
 export default function StatsCharts({ type, data, allData, selectedEquips, selectedMonths, occurrences }: StatsChartsProps) {
+  const [hoveredTitle, setHoveredTitle] = useState<'mtbf' | 'mttr' | null>(null);
   const equipList = type === 'escadas' ? ESCADAS_LIST : ELEVADORES_LIST;
   const commercialMonthHours = type === 'elevadores' ? 720 : 360;
 
@@ -214,10 +215,19 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         </div>
       </div>
 
-      {/* 4. MTBF Bar */}
+{/* 4. MTBF Bar */}
       <div className="chart-container">
-        <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
+        <h2
+          className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6 cursor-help relative"
+          onMouseEnter={() => setHoveredTitle('mtbf')}
+          onMouseLeave={() => setHoveredTitle(null)}
+        >
           MTBF - Tempo Médio Entre Falhas (Horas)
+          {hoveredTitle === 'mtbf' && (
+            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 px-4 py-3 bg-stone-900 text-white text-[10px] leading-relaxed font-medium rounded-xl shadow-2xl z-50 text-center">
+              Mede o tempo que um equipamento funciona sem quebrar. Quanto maior for, melhor.
+            </span>
+          )}
         </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -235,10 +245,19 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         </div>
       </div>
 
-      {/* 5. MTTR Bar */}
+{/* 5. MTTR Bar */}
       <div className="chart-container">
-        <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
+        <h2
+          className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6 cursor-help relative"
+          onMouseEnter={() => setHoveredTitle('mttr')}
+          onMouseLeave={() => setHoveredTitle(null)}
+        >
           MTTR - Tempo Médio para Reparo (Horas)
+          {hoveredTitle === 'mttr' && (
+            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 px-4 py-3 bg-stone-900 text-white text-[10px] leading-relaxed font-medium rounded-xl shadow-2xl z-50 text-center">
+              Mede o tempo que a máquina fica parada até ser consertada. Quanto menor for, melhor.
+            </span>
+          )}
         </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
