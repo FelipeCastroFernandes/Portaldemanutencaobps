@@ -15,11 +15,14 @@ import {
   Eye,
   X,
   FileText,
-  Pencil
+  Pencil,
+  Play,
+  PauseCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from './PageHeader';
 import { CAUSAS_PARADA_BY_TYPE, Occurrence, User as UserType } from '../types';
+import { MESES_ORDEM } from '../data/initialData';
 import { getLocalTimezoneOffset } from '../lib/utils';
 
 interface ServiceOrdersViewProps {
@@ -34,8 +37,9 @@ interface ServiceOrdersViewProps {
 
 export default function ServiceOrdersView({ occurrences, users, currentUser, onBack, onUpdate, onDelete, onAdd }: ServiceOrdersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'paused'>('all');
   const [filterType, setFilterType] = useState<'all' | 'escadas' | 'elevadores'>('all');
+  const [filterMonth, setFilterMonth] = useState<string>('all');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
   const [editingOccId, setEditingOccId] = useState<string | null>(null);
@@ -126,6 +130,23 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
     setReturnFormData(getInitialReturnFormData());
   };
 
+  const handlePauseExtraScope = (occ: Occurrence) => {
+    onUpdate({
+      ...occ,
+      extraScopeStart: new Date().toISOString(),
+    });
+  };
+
+  const handleResumeExtraScope = (occ: Occurrence) => {
+    onUpdate({
+      ...occ,
+      extraScopeEnd: new Date().toISOString(),
+    });
+    alert('O tempo de parada do equipamento voltou a ser contabilizado a partir de agora.');
+  };
+
+  const isPaused = (o: Occurrence) => !!o.extraScopeStart && !o.extraScopeEnd;
+
   const filteredOrders = useMemo(() => {
     return occurrences
       .filter(order => {
@@ -133,31 +154,37 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
           order.equip.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.callNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
           order.attendant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (order.createdBy && order.createdBy.toLowerCase().includes(searchTerm.toLowerCase()));
+          (order.createdBy && order.createdBy.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (order.reason && order.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (order.causa_parada && order.causa_parada.toLowerCase().includes(searchTerm.toLowerCase()));
         
         const isClosed = !!order.end;
+        const paused = isPaused(order);
         const matchesStatus = 
           filterStatus === 'all' || 
-          (filterStatus === 'open' && !isClosed) || 
-          (filterStatus === 'closed' && isClosed);
+          (filterStatus === 'open' && !isClosed && !paused) || 
+          (filterStatus === 'closed' && isClosed) ||
+          (filterStatus === 'paused' && paused);
         
         const matchesType = 
           filterType === 'all' || 
           order.type === filterType;
+
+        const orderMonth = MESES_ORDEM[new Date(order.start).getMonth()];
+        const matchesMonth = filterMonth === 'all' || orderMonth === filterMonth;
         
-        return matchesSearch && matchesStatus && matchesType;
+        return matchesSearch && matchesStatus && matchesType && matchesMonth;
       })
       .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
-  }, [occurrences, searchTerm, filterStatus, filterType]);
+  }, [occurrences, searchTerm, filterStatus, filterType, filterMonth]);
 
   const stats = useMemo(() => {
-    const total = occurrences.length;
-    const open = occurrences.filter(o => !o.end).length;
-    const waiting = open; // No difference in this simplified model, but mockup has Concluidas (hoje)
-    const concludedToday = occurrences.filter(o => !!o.end).length;
+    const total = filteredOrders.length;
+    const open = filteredOrders.filter(o => !o.end).length;
+    const concluded = filteredOrders.filter(o => !!o.end).length;
 
-    return { total, waiting, inExecution: open, concludedToday };
-  }, [occurrences]);
+    return { total, waiting: open, inExecution: open, concludedToday: concluded };
+  }, [filteredOrders]);
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Tipo', 'Equipamento', 'Nº Chamado', 'Solicitante (Acesso)', 'Atendente (Empresa)', 'Técnico Responsável', 'Causa de Parada', 'Motivo da Parada', 'Fechado Por (Acesso)', 'Início', 'Fim', 'Status'];
@@ -378,7 +405,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
             </div>
             
             <div className="flex items-center gap-2 p-1 bg-brand-dark-red/5 rounded-xl w-full md:w-auto overflow-x-auto">
-              {(['all', 'open', 'closed'] as const).map((status) => (
+              {(['all', 'open', 'paused', 'closed'] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setFilterStatus(status)}
@@ -388,12 +415,22 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                       : 'text-brand-dark-red/40 hover:text-brand-dark-red hover:bg-white'
                   }`}
                 >
-                  {status === 'all' ? 'Todos Status' : status === 'open' ? 'Pendentes' : 'Finalizados'}
+                  {status === 'all' ? 'Todos Status' : status === 'open' ? 'Em andamento' : status === 'paused' ? 'Escopo Extra' : 'Concluído'}
                 </button>
               ))}
             </div>
 
             <div className="flex items-center gap-2 pr-2">
+              <select 
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="bg-brand-dark-red/5 text-brand-dark-red text-[9px] font-black uppercase tracking-widest px-4 py-2.5 rounded-lg border-none focus:ring-2 focus:ring-brand-dark-red h-[40px] cursor-pointer"
+              >
+                <option value="all">Mês: Todos</option>
+                {MESES_ORDEM.map(mes => (
+                  <option key={mes} value={mes}>{mes}</option>
+                ))}
+              </select>
               <select 
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as any)}
@@ -410,9 +447,10 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
           <div className="space-y-4">
             <div className="hidden md:grid grid-cols-12 px-8 text-[10px] font-black text-brand-dark-red uppercase tracking-[0.2em]">
               <div className="col-span-1">Chamado</div>
+              <div className="col-span-1">Tipo</div>
               <div className="col-span-2">Ativo</div>
-              <div className="col-span-3">Equipamento</div>
-              <div className="col-span-3">Aberto por</div>
+              <div className="col-span-2">Aberto por</div>
+              <div className="col-span-3">Motivo</div>
               <div className="col-span-3">Status</div>
             </div>
 
@@ -426,7 +464,8 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: idx * 0.05 }}
                     key={order.id}
-                    className="bg-white rounded-3xl p-6 md:p-8 border-2 border-brand-dark-red/5 hover:border-brand-red/30 transition-all group hover:shadow-2xl hover:shadow-brand-red/10"
+                    onDoubleClick={() => setSelectedOrderDetails(order)}
+                    className="bg-white rounded-3xl p-6 md:p-8 border-2 border-brand-dark-red/5 hover:border-brand-red/30 transition-all group hover:shadow-2xl hover:shadow-brand-red/10 cursor-pointer"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6">
                       {/* ID/Chamado */}
@@ -434,22 +473,21 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                         <span className="text-xl md:text-2xl font-black text-brand-dark-red">#{order.callNumber}</span>
                       </div>
 
+                      {/* Tipo */}
+                      <div className="md:col-span-1 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest inline-block w-fit ${order.type === 'escadas' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                          {order.type === 'escadas' ? 'Escada' : 'Elevador'}
+                        </span>
+                      </div>
+
                       {/* Ativo */}
                       <div className="md:col-span-2 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
                         <span className="text-sm font-black text-brand-dark-red uppercase tracking-tight">{order.equip}</span>
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Identificador</span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Ativo</span>
                       </div>
 
-                      {/* Equipamento */}
-                      <div className="md:col-span-3 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest inline-block w-fit ${order.type === 'escadas' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
-                          {order.type}
-                        </span>
-                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Categoria</span>
-                      </div>
-
-                      {/* People / Aberto por */}
-                      <div className="md:col-span-3 flex flex-col gap-2 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
+                      {/* Aberto por */}
+                      <div className="md:col-span-2 flex flex-col gap-2 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-brand-dark-red/10 flex items-center justify-center text-[10px] font-black text-brand-dark-red">
                             {order.createdBy?.charAt(0) || 'S'}
@@ -461,75 +499,32 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                         </div>
                       </div>
 
+                      {/* Motivo */}
+                      <div className="md:col-span-3 flex flex-col gap-1 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6 min-w-0">
+                        <span className="text-[11px] font-black text-gray-800 truncate" title={order.reason || '-'}>
+                          {order.causa_parada || '-'}
+                        </span>
+                        {order.reason && <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Causa</span>}
+                      </div>
+
                       {/* Status */}
                       <div className="md:col-span-3 flex items-center justify-between gap-6 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
                         <div className="w-full flex-1">
                           <div className="flex justify-between items-center mb-1">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${order.end ? 'text-emerald-600' : 'text-amber-600'}`}>
-                              {order.end ? 'Concluída' : 'Em andamento'}
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${order.end ? 'text-emerald-600' : isPaused(order) ? 'text-amber-600' : 'text-amber-600'}`}>
+                              {order.end ? 'Concluída' : isPaused(order) ? 'Pausado' : 'Em andamento'}
                             </span>
                           </div>
                           <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: 0 }}
-                              animate={{ width: order.end ? '100%' : '20%' }}
-                              className={`h-full rounded-full ${order.end ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                              animate={{ width: order.end ? '100%' : isPaused(order) ? '60%' : '20%' }}
+                              className={`h-full rounded-full ${order.end ? 'bg-emerald-500' : isPaused(order) ? 'bg-amber-500' : 'bg-amber-500'}`}
                             />
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedOrderDetails(order);
-                            }}
-                            className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all active:scale-95 shadow-sm"
-                            title="Ver Detalhes"
-                          >
-                            <Eye size={20} />
-                          </button>
-                           {!order.end ? (
-                             <button 
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleOpenReturnForm(order.id);
-                               }}
-                               className="p-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all hover:-translate-y-1 active:scale-95"
-                               title="Registrar Retorno"
-                             >
-                               <CheckCircle2 size={18} />
-                             </button>
-                          ) : (
-                            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                              <CheckCircle2 size={18} />
-                            </div>
-                          )}
-                          {currentUser?.profile === 'Gestor' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditForm(order);
-                              }}
-                              className="p-3 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-600 hover:text-white transition-all active:scale-95 shadow-sm"
-                              title="Editar Chamado"
-                            >
-                              <Pencil size={18} />
-                            </button>
-                          )}
-                          {currentUser?.profile === 'Gestor' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingOccId(order.id);
-                              }}
-                              className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all active:scale-95 shadow-sm"
-                              title="Excluir Chamado"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
-                        </div>
+<div className="flex items-center gap-2" />
                       </div>
                     </div>
                   </motion.div>
@@ -718,7 +713,70 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-gray-100 flex justify-end shrink-0">
+              <div className="p-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  {!selectedOrderDetails.end && (currentUser?.profile === 'Gestor' || currentUser?.profile === 'Planejador') && (
+                    isPaused(selectedOrderDetails) ? (
+                      <button
+                        onClick={() => {
+                          const occ = selectedOrderDetails;
+                          setSelectedOrderDetails(null);
+                          handleResumeExtraScope(occ);
+                        }}
+                        className="px-5 py-2 bg-green-100 text-green-700 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-green-200 transition-all active:scale-95 flex items-center gap-1.5"
+                      >
+                        <Play size={14} /> Retomar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const occ = selectedOrderDetails;
+                          setSelectedOrderDetails(null);
+                          handlePauseExtraScope(occ);
+                        }}
+                        className="px-5 py-2 bg-amber-100 text-amber-700 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-200 transition-all active:scale-95 flex items-center gap-1.5"
+                      >
+                        <PauseCircle size={14} /> Pausar
+                      </button>
+                    )
+                  )}
+                  {!selectedOrderDetails.end && (currentUser?.profile === 'Gestor' || currentUser?.profile === 'Planejador') && (
+                    <button
+                      onClick={() => {
+                        const id = selectedOrderDetails.id;
+                        setSelectedOrderDetails(null);
+                        handleOpenReturnForm(id);
+                      }}
+                      className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-lg flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 size={14} /> Registrar Retorno
+                    </button>
+                  )}
+                  {currentUser?.profile === 'Gestor' && (
+                    <button
+                      onClick={() => {
+                        const id = selectedOrderDetails.id;
+                        setSelectedOrderDetails(null);
+                        handleOpenEditForm(selectedOrderDetails);
+                      }}
+                      className="px-5 py-2 bg-amber-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-600 transition-all active:scale-95 shadow-lg flex items-center gap-1.5"
+                    >
+                      <Pencil size={14} /> Editar
+                    </button>
+                  )}
+                  {currentUser?.profile === 'Gestor' && (
+                    <button
+                      onClick={() => {
+                        const id = selectedOrderDetails.id;
+                        setSelectedOrderDetails(null);
+                        setDeletingOccId(id);
+                      }}
+                      className="px-5 py-2 bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-red-700 transition-all active:scale-95 shadow-lg flex items-center gap-1.5"
+                    >
+                      <Trash2 size={14} /> Excluir
+                    </button>
+                  )}
+                </div>
                 <button 
                   onClick={() => setSelectedOrderDetails(null)}
                   className="px-6 py-2 bg-brand-dark-red text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-dark-red/90 transition-all active:scale-95 shadow-lg"
