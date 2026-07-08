@@ -7,7 +7,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PlusCircle } from 'lucide-react';
-import { INITIAL_ESCADA_DATA, INITIAL_ELEVADOR_DATA, MESES_ORDEM } from './data/initialData';
+import { INITIAL_ESCADA_DATA, INITIAL_ELEVADOR_DATA, MESES_ORDEM, HORAS_MES, HORAS_ESCADA_MES } from './data/initialData';
 import { MaintenanceRecord, EquipmentType, Occurrence, User, ProfileLevel } from './types';
 import DashboardView from './components/DashboardView';
 import DashboardCover from './components/DashboardCover';
@@ -178,37 +178,87 @@ export default function App() {
       }, 0);
     };
 
-    const getDowntimeMs = (occ: Occurrence) => {
-      if (!occ.end || occ.is_equipment_stopped === false) return 0;
+    const getMonthEnd = (date: Date): Date => {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+    };
 
-      const grossDowntimeMs = Math.max(0, new Date(occ.end).getTime() - new Date(occ.start).getTime());
-      return Math.max(0, grossDowntimeMs - getExtraScopeApprovalMs(occ));
+    const splitDowntimeAcrossMonths = (occ: Occurrence): { mes: string; downtimeMs: number; chamados: number }[] => {
+      if (!occ.end || occ.is_equipment_stopped === false) return [];
+
+      const extraMs = getExtraScopeApprovalMs(occ);
+      const start = new Date(occ.start);
+      const end = new Date(occ.end);
+      const grossMs = Math.max(0, end.getTime() - start.getTime());
+      const totalDowntimeMs = Math.max(0, grossMs - extraMs);
+
+      if (totalDowntimeMs === 0) return [];
+
+      const startMonth = start.getMonth();
+      const endMonth = end.getMonth();
+      const startYear = start.getFullYear();
+      const endYear = end.getFullYear();
+
+      if (startMonth === endMonth && startYear === endYear) {
+        const mes = MESES_ORDEM[startMonth];
+        return [{ mes, downtimeMs: totalDowntimeMs, chamados: 1 }];
+      }
+
+      const result: { mes: string; downtimeMs: number; chamados: number }[] = [];
+      const monthEnd = getMonthEnd(start);
+      let msInStartMonth = Math.max(0, monthEnd.getTime() - start.getTime());
+      let msInEndMonth = Math.max(0, end.getTime() - new Date(end.getFullYear(), end.getMonth(), 1).getTime());
+      const msInBetween = totalDowntimeMs - msInStartMonth - msInEndMonth;
+
+      if (msInStartMonth > 0) {
+        const ratio = msInStartMonth / (msInStartMonth + msInEndMonth + msInBetween);
+        result.push({ mes: MESES_ORDEM[startMonth], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 1 });
+      }
+
+      if (msInBetween > 0) {
+        let cur = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        while (cur.getTime() < new Date(end.getFullYear(), end.getMonth(), 1).getTime()) {
+          const fullMonthMs = new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate() * 24 * 60 * 60 * 1000;
+          const ratio = fullMonthMs / (msInStartMonth + msInEndMonth + msInBetween);
+          result.push({ mes: MESES_ORDEM[cur.getMonth()], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 0 });
+          cur.setMonth(cur.getMonth() + 1);
+        }
+      }
+
+      if (msInEndMonth > 0) {
+        const ratio = msInEndMonth / (msInStartMonth + msInEndMonth + msInBetween);
+        result.push({ mes: MESES_ORDEM[endMonth], downtimeMs: Math.round(totalDowntimeMs * ratio), chamados: 0 });
+      }
+
+      return result;
     };
 
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
       const typeOccurrences = occurrences.filter(o => o.type === type);
       if (typeOccurrences.length === 0) return baseData;
 
-      const groupedOcc = typeOccurrences.reduce((acc, occ) => {
-        const date = new Date(occ.start);
-        const mes = MESES_ORDEM[date.getMonth()];
-        const key = `${occ.equip}-${mes}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(occ);
+      const spans: { mes: string; equip: string; downtimeMs: number; chamados: number }[] = [];
+
+      typeOccurrences.forEach(occ => {
+        const parts = splitDowntimeAcrossMonths(occ);
+        parts.forEach(p => spans.push({ ...p, equip: occ.equip }));
+      });
+
+      const hoursByMonth: Record<string, { downtimeMs: number; chamados: number }> = spans.reduce((acc, s) => {
+        const key = `${s.equip}-${s.mes}`;
+        if (!acc[key]) acc[key] = { downtimeMs: 0, chamados: 0 };
+        acc[key].downtimeMs += s.downtimeMs;
+        acc[key].chamados += s.chamados;
         return acc;
-      }, {} as Record<string, Occurrence[]>);
+      }, {} as Record<string, { downtimeMs: number; chamados: number }>);
 
       const updatedData = [...baseData];
 
-      Object.entries(groupedOcc).forEach(([key, value]) => {
-        const occs = value as Occurrence[];
+      Object.entries(hoursByMonth).forEach(([key, value]) => {
         const [equip, mes] = key.split('-');
-        const totalHours = type === 'elevadores' ? 720 : 360;
-        
-        const downtimeMs = occs.reduce((total, occ) => total + getDowntimeMs(occ), 0);
+        const totalHours = type === 'elevadores' ? (HORAS_MES[mes] ?? 720) : (HORAS_ESCADA_MES[mes] ?? 360);
 
-        const downtimeHours = downtimeMs / (1000 * 60 * 60);
-        const chamados = occs.length;
+        const downtimeHours = value.downtimeMs / (1000 * 60 * 60);
+        const chamados = value.chamados;
         const disp = Math.max(0, Math.min(100, ((totalHours - downtimeHours) / totalHours) * 100));
         const mtbfHours = chamados > 0 ? (totalHours - downtimeHours) / chamados : totalHours;
         const mttrHours = chamados > 0 ? downtimeHours / chamados : 0;
