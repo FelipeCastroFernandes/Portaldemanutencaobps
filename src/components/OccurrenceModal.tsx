@@ -137,16 +137,23 @@ export default function OccurrenceModal({
    };
 
    const handlePauseExtraScope = (occ: Occurrence) => {
+     const now = new Date();
+     const isoLocal = `${now.toISOString().split('T')[0]}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00${getLocalTimezoneOffset()}`;
+     
      onUpdate({
        ...occ,
-       extraScopeStart: new Date().toISOString(),
+       extraScopeStart: isoLocal,
+       extraScopeEnd: undefined,
      });
    };
 
    const handleResumeExtraScope = (occ: Occurrence) => {
+     const now = new Date();
+     const isoLocal = `${now.toISOString().split('T')[0]}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00${getLocalTimezoneOffset()}`;
+     
      onUpdate({
        ...occ,
-       extraScopeEnd: new Date().toISOString(),
+       extraScopeEnd: isoLocal,
      });
    };
 
