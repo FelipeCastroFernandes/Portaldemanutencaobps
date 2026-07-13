@@ -45,6 +45,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [editingOccId, setEditingOccId] = useState<string | null>(null);
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<Occurrence | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const getInitialReturnFormData = () => ({
     technician: '',
@@ -212,35 +213,55 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
     return { total, waiting: open, inExecution: open, concludedToday: concluded };
   }, [filteredOrders]);
 
-  const handleExportCSV = () => {
-    const headers = ['ID', 'Tipo', 'Equipamento', 'Nº Chamado', 'Solicitante (Acesso)', 'Atendente (Empresa)', 'Técnico Responsável', 'Causa de Parada', 'Motivo da Parada', 'Fechado Por (Acesso)', 'Início', 'Fim', 'Status'];
-    const rows = filteredOrders.map(o => [
-      o.id,
-      o.type,
-      o.equip,
-      o.callNumber,
-      o.createdBy || '-',
-      o.attendant,
-      o.technician || '-',
-      o.causa_parada || '-',
-      `"${(o.reason || '-').replace(/"/g, '""')}"`,
-      o.closedBy || '-',
-      new Date(o.start).toLocaleString(),
-      o.end ? new Date(o.end).toLocaleString() : '-',
-      o.end ? 'Concluído' : 'Aberto'
-    ]);
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+      
+      const data = filteredOrders.map(o => ({
+        'ID': o.id,
+        'Tipo': o.type === 'escadas' ? 'Escada' : 'Elevador',
+        'Equipamento': o.equip,
+        'Nº Chamado': o.callNumber,
+        'Solicitante (Acesso)': o.createdBy || '-',
+        'Atendente (Empresa)': o.attendant,
+        'Técnico Responsável': o.technician || '-',
+        'Causa de Parada': o.causa_parada || '-',
+        'Motivo da Parada': o.reason || '-',
+        'Fechado Por (Acesso)': o.closedBy || '-',
+        'Início': new Date(o.start).toLocaleString(),
+        'Fim': o.end ? new Date(o.end).toLocaleString() : '-',
+        'Status': o.end ? 'Concluído' : 'Aberto'
+      }));
 
-    const csvContent = "data:text/csv;charset=utf-8,\ufeff" 
-      + headers.join(',') + "\n"
-      + rows.map(r => r.join(',')).join('\n');
+      const ws = XLSX.utils.json_to_sheet(data);
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `relatorio_bps_manutencao_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      ws['!cols'] = [
+        { wch: 15 }, // ID
+        { wch: 10 }, // Tipo
+        { wch: 15 }, // Equipamento
+        { wch: 15 }, // Nº Chamado
+        { wch: 20 }, // Solicitante
+        { wch: 20 }, // Atendente
+        { wch: 20 }, // Técnico
+        { wch: 25 }, // Causa
+        { wch: 40 }, // Motivo
+        { wch: 20 }, // Fechado Por
+        { wch: 20 }, // Início
+        { wch: 20 }, // Fim
+        { wch: 12 }  // Status
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Relatório");
+      
+      const fileName = `relatorio_bps_manutencao_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error("Erro ao exportar para Excel:", error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const parseDate = (dateStr: string, timeStr: string) => {
@@ -359,11 +380,12 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
               </label>
             )}
             <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg border border-white/20 text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all group"
+              onClick={handleExportExcel}
+              disabled={isExporting}
+              className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-lg border border-white/20 text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all group disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/10"
             >
-              <Download size={16} className="group-hover:-translate-y-0.5 transition-transform" />
-              <span>Exportar CSV</span>
+              <Download size={16} className={`transition-transform ${isExporting ? 'animate-bounce' : 'group-hover:-translate-y-0.5'}`} />
+              <span>{isExporting ? 'Gerando...' : 'Exportar Excel'}</span>
             </button>
           </>
         }
