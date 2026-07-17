@@ -552,28 +552,30 @@ export default function OccurrenceModal({
                           ) : (
                             <div className="flex items-center gap-2">
                               {canManage && (
-                                isPaused(occ) ? (
-                                  <button
-                                    onClick={() => handleResumeExtraScope(occ)}
-                                    className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-colors flex items-center gap-1.5"
+                                <>
+                                  {isPaused(occ) ? (
+                                    <button
+                                      onClick={() => handleResumeExtraScope(occ)}
+                                      className="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-green-200 transition-colors flex items-center gap-1.5"
+                                    >
+                                      <Play size={12} /> Retomar Atendimento
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handlePauseExtraScope(occ)}
+                                      className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-colors flex items-center gap-1.5"
+                                    >
+                                      <PauseCircle size={12} /> Pausar: Escopo Extra
+                                    </button>
+                                  )}
+                                  <button 
+                                    onClick={() => handleOpenReturnForm(occ.id)}
+                                    className="bg-brand-red text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark-red transition-colors flex items-center gap-1.5"
                                   >
-                                    <Play size={12} /> Retomar Atendimento
+                                    Registrar Retorno <CheckCircle2 size={12} />
                                   </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handlePauseExtraScope(occ)}
-                                    className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-200 transition-colors flex items-center gap-1.5"
-                                  >
-                                    <PauseCircle size={12} /> Pausar: Escopo Extra
-                                  </button>
-                                )
+                                </>
                               )}
-                              <button 
-                                onClick={() => handleOpenReturnForm(occ.id)}
-                                className="bg-brand-red text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand-dark-red transition-colors flex items-center gap-1.5"
-                              >
-                                Registrar Retorno <CheckCircle2 size={12} />
-                              </button>
                             </div>
                           )}
                         </div>
