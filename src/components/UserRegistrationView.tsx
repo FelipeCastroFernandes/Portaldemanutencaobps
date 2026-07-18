@@ -41,7 +41,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
     password: '',
     team: '',
     role: '',
-    profile: 'visualização' as ProfileLevel,
+    profile: 'visualizar' as ProfileLevel,
     photo: ''
   });
 
@@ -67,7 +67,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
       password: user.password || '',
       team: user.team || '',
       role: user.role || '',
-      profile: user.profile || 'visualização',
+      profile: user.profile || 'visualizar',
       photo: user.photo || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -81,7 +81,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
       password: '',
       team: '',
       role: '',
-      profile: 'visualização',
+      profile: 'visualizar',
       photo: ''
     });
   };
@@ -300,7 +300,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
                 >
                   <option value="Gestor">Gestor</option>
                   <option value="Planejador">Planejador</option>
-                  <option value="visualização">Visualização</option>
+                  <option value="visualizar">Visualizar</option>
                 </select>
               </div>
 
@@ -380,7 +380,7 @@ export default function UserRegistrationView({ onBack, onAddUser, onUpdateUser, 
                               <div className="flex flex-col bg-gray-50 p-2 rounded-lg border border-gray-100">
                                 <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Nível</span>
                                 <span className={`text-[10px] font-black uppercase tracking-tighter ${user.profile === 'Gestor' ? 'text-amber-600' : user.profile === 'Planejador' ? 'text-brand-red' : 'text-blue-600'}`}>
-                                  {user.profile === 'Gestor' ? 'Gestor' : user.profile === 'Planejador' ? 'Planejador' : 'Visualização'}
+                                  {user.profile === 'Gestor' ? 'Gestor' : user.profile === 'Planejador' ? 'Planejador' : 'Visualizar'}
                                 </span>
                               </div>
                             </div>

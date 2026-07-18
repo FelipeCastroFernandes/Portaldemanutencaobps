@@ -1,11 +1,11 @@
 import { ProfileLevel, User } from '../types';
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (!profile) return 'visualização';
+  if (!profile) return 'visualizar';
   const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (p === 'gestor' || p === 'gestao') return 'Gestor';
   if (p === 'planejador') return 'Planejador';
-  return 'visualização';
+  return 'visualizar';
 }
 
 export function useAuth() {

@@ -419,20 +419,20 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 
 // --- Mappers ---
 function profileToDb(profile: string | undefined): string {
-  if (!profile) return 'visualização';
+  if (!profile) return 'visualizar';
   const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (p === 'gestor' || p === 'gestao') return 'Gestor';
   if (p === 'planejador') return 'Planejador';
-  return 'visualização';
+  return 'visualizar';
 }
 
 // Convert Supabase profile values to app format
 function profileFromDb(dbProfile: string | undefined): string {
-  if (!dbProfile) return 'visualização';
+  if (!dbProfile) return 'visualizar';
   const p = dbProfile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (p === 'gestor' || p === 'gestao') return 'Gestor';
   if (p === 'planejador') return 'Planejador';
-  return 'visualização';
+  return 'visualizar';
 }
 
 function dbUserToLocalMap(dbRow: any): User {
@@ -444,17 +444,17 @@ function dbUserToLocalMap(dbRow: any): User {
     photo: dbRow.photo,
     team: dbRow.team || '',
     role: dbRow.role || '',
-    profile: profileFromDb(dbRow.profile) || 'visualização',
+    profile: profileFromDb(dbRow.profile) || 'visualizar',
     createdAt: dbRow.created_at || dbRow.createdAt || new Date().toISOString(),
   });
 }
 
 function normalizeProfile(profile: string | undefined): ProfileLevel {
-  if (!profile) return 'visualização';
+  if (!profile) return 'visualizar';
   const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (p === 'gestor' || p === 'gestao') return 'Gestor';
   if (p === 'planejador') return 'Planejador';
-  return 'visualização';
+  return 'visualizar';
 }
 
 function normalizeUserProfile(user: User): User {
