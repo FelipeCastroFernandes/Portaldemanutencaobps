@@ -179,26 +179,30 @@ export async function getOccurrences(): Promise<Occurrence[]> {
 }
 
 export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence> {
+  const payload = {
+    type: occurrence.type,
+    equip: occurrence.equip,
+    call_number: occurrence.callNumber,
+    attendant: occurrence.attendant,
+    created_by: occurrence.createdBy,
+    start_time: occurrence.start,
+    end_time: occurrence.end || null,
+    technician: occurrence.technician || null,
+    reason: occurrence.reason || null,
+    causa_parada: occurrence.causa_parada || null,
+    is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
+    status_history: occurrence.statusHistory || null,
+    extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
+    extra_scope_start: occurrence.extraScopeStart || null,
+    extra_scope_end: occurrence.extraScopeEnd || null,
+    closed_by: occurrence.closedBy || null,
+  };
+
+  console.log('[saveOccurrence] Payload being sent to Supabase:', JSON.stringify(payload, null, 2));
+
   try {
     if (isSupabaseConfigured() && supabase) {
-      const { data, error } = await supabase.from('occurrences').insert({
-        type: occurrence.type,
-        equip: occurrence.equip,
-        call_number: occurrence.callNumber,
-        attendant: occurrence.attendant,
-        created_by: occurrence.createdBy,
-        start_time: occurrence.start,
-        end_time: occurrence.end || null,
-        technician: occurrence.technician || null,
-        reason: occurrence.reason || null,
-        causa_parada: occurrence.causa_parada || null,
-        is_equipment_stopped: occurrence.is_equipment_stopped ?? null,
-        status_history: occurrence.statusHistory || null,
-        extra_scope_approval_ms: occurrence.extraScopeApprovalMs || null,
-        extra_scope_start: occurrence.extraScopeStart || null,
-        extra_scope_end: occurrence.extraScopeEnd || null,
-        closed_by: occurrence.closedBy || null,
-      }).select().single();
+      const { data, error } = await supabase.from('occurrences').insert(payload).select().single();
       
       if (error) {
         console.error('[saveOccurrence] Supabase error:', {
@@ -207,7 +211,10 @@ export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence
           details: error.details,
           hint: error.hint,
         });
-      } else if (data) {
+        throw new Error(`Erro ao salvar ocorrência no banco de dados: ${error.message}`);
+      }
+      
+      if (data) {
         console.log('[saveOccurrence] Successfully saved to Supabase:', data);
         const localOcc = dbOccurrenceToLocalMap(data);
         _mockOccurrences.push(localOcc);
@@ -215,10 +222,17 @@ export async function saveOccurrence(occurrence: Occurrence): Promise<Occurrence
         return localOcc;
       }
     }
-  } catch (e) {
-    console.warn("Failed saving occurrence to Supabase, using local fallback:", e);
+  } catch (e: any) {
+    // Re-throw if it's our own error (from the Supabase error check above)
+    if (e?.message?.startsWith('Erro ao salvar')) {
+      throw e;
+    }
+    console.error("Failed saving occurrence to Supabase:", e);
+    throw new Error(`Falha na conexão com o banco de dados: ${e?.message || 'Erro desconhecido'}`);
   }
 
+  // Fallback to local only if Supabase is not configured
+  console.warn('[saveOccurrence] Supabase not configured, saving locally only');
   const newOcc = { ...occurrence, id: Math.random().toString(36).substr(2, 9) };
   _mockOccurrences.push(newOcc);
   saveLocal();

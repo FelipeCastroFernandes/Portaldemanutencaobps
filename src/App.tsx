@@ -303,7 +303,8 @@ export default function App() {
       const savedOcc = await apiSaveOccurrence(occ);
       setOccurrences(prev => [...prev, savedOcc]);
     } catch (e: any) {
-      console.error(e);
+      console.error('[handleAddOccurrence] Error:', e);
+      alert(`Erro ao salvar ocorrência no banco de dados!\n\n${e?.message || 'Erro desconhecido'}\n\nVerifique o console do navegador (F12) para mais detalhes.`);
     }
   };
 
