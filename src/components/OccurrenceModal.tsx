@@ -89,7 +89,7 @@ export default function OccurrenceModal({
       equip: formData.equip,
       callNumber: formData.callNumber,
       attendant: formData.attendant,
-      createdBy: formData.createdBy,
+      createdBy: currentUser?.profile === 'Gestor' ? formData.createdBy : (currentUser?.fullName || 'Sistema'),
       start: `${formData.startDate}T${formData.startTime}:00${getLocalTimezoneOffset()}`,
       is_equipment_stopped: formData.is_equipment_stopped,
     };
