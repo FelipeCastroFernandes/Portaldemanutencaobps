@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
   ComposedChart 
 } from 'recharts';
+import { Maximize2, X } from 'lucide-react';
 import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
 import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
 import { parseTime, calcDisp } from '../lib/utils';
@@ -27,6 +28,7 @@ const COLORS = ['#79030f', '#ab0303', '#b76058', '#d4c2ae', '#4a0209', '#e8877e'
 
 export default function StatsCharts({ type, data, allData, selectedEquips, selectedMonths, occurrences }: StatsChartsProps) {
   const [hoveredTitle, setHoveredTitle] = useState<'mtbf' | 'mttr' | null>(null);
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
   const equipList = type === 'escadas' ? ESCADAS_LIST : ELEVADORES_LIST;
   const commercialMonthHours = type === 'elevadores' ? 720 : 360;
 
@@ -134,12 +136,20 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
   }, [data, allData, selectedEquips, selectedMonths, equipList, commercialMonthHours]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* 1. Bar Chart Disp */}
-      <div className="chart-container lg:col-span-2">
-        <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
-          Disponibilidade por {selectedEquips.length === 1 ? 'Período' : 'Equipamento'} (%)
-        </h2>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 1. Bar Chart Disp */}
+        <div className="chart-container lg:col-span-2 relative">
+          <button
+            onClick={() => setExpandedChart('disp')}
+            className="absolute top-4 left-4 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+            title="Expandir gráfico"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
+            Disponibilidade por {selectedEquips.length === 1 ? 'Período' : 'Equipamento'} (%)
+          </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={barData}>
@@ -159,7 +169,14 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       </div>
 
       {/* 2. Line Chart Trend */}
-      <div className="chart-container">
+      <div className="chart-container relative">
+        <button
+          onClick={() => setExpandedChart('trend')}
+          className="absolute top-4 left-4 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+          title="Expandir gráfico"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
         <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
           Disponibilidade Média Mensal (%)
         </h2>
@@ -181,7 +198,14 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       </div>
 
       {/* 3. Pie Chart Chamados */}
-      <div className="chart-container text-center">
+      <div className="chart-container text-center relative">
+        <button
+          onClick={() => setExpandedChart('pie')}
+          className="absolute top-4 left-4 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+          title="Expandir gráfico"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
         <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
           Proporção de Chamados
         </h2>
@@ -216,7 +240,14 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       </div>
 
 {/* 4. MTBF Bar */}
-      <div className="chart-container">
+      <div className="chart-container relative">
+        <button
+          onClick={() => setExpandedChart('mtbf')}
+          className="absolute top-4 left-4 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+          title="Expandir gráfico"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
         <h2
           className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6 cursor-help relative"
           onMouseEnter={() => setHoveredTitle('mtbf')}
@@ -246,7 +277,14 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
       </div>
 
 {/* 5. MTTR Bar */}
-      <div className="chart-container">
+      <div className="chart-container relative">
+        <button
+          onClick={() => setExpandedChart('mttr')}
+          className="absolute top-4 left-4 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+          title="Expandir gráfico"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
         <h2
           className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6 cursor-help relative"
           onMouseEnter={() => setHoveredTitle('mttr')}
@@ -283,7 +321,137 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
          />
        </div>
      </div>
-   );
+
+      {expandedChart && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 lg:p-12">
+          <div className="bg-white rounded-[24px] w-full h-full max-h-[800px] max-w-6xl relative flex flex-col p-8 lg:p-12 shadow-2xl">
+            <button 
+              onClick={() => setExpandedChart(null)}
+              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+            <div className="flex-1 w-full h-full">
+              {expandedChart === 'disp' && (
+                <>
+                  <h2 className="text-center font-bold text-brand-dark-red uppercase text-xl tracking-widest mb-8">
+                    Disponibilidade por {selectedEquips.length === 1 ? 'Período' : 'Equipamento'} (%)
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <ComposedChart data={barData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                      <XAxis dataKey="name" fontSize={12} tick={{ fill: '#555' }} />
+                      <YAxis domain={[40, 105]} fontSize={12} tick={{ fill: '#555' }} />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                        formatter={(v: number) => [`${v}%`, 'Disponibilidade']}
+                      />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar dataKey="disp" name="Disponibilidade (%)" fill="#79030f" radius={[4, 4, 0, 0]} barSize={60} />
+                      <Line dataKey="meta" name="Meta Individual (85%)" stroke="#2b2b2b" strokeDasharray="5 5" dot={false} strokeWidth={3} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </>
+              )}
+
+              {expandedChart === 'trend' && (
+                <>
+                  <h2 className="text-center font-bold text-brand-dark-red uppercase text-xl tracking-widest mb-8">
+                    Disponibilidade Média Mensal (%)
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <ComposedChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                      <XAxis dataKey="name" fontSize={12} />
+                      <YAxis domain={[60, 105]} fontSize={12} />
+                      <Tooltip formatter={(v: number) => [`${v}%`, 'Média']} />
+                      <Legend verticalAlign="top" height={36} />
+                      <Line type="monotone" dataKey="disp" name="Média Mensal (%)" stroke="#ab0303" strokeWidth={4} dot={{ r: 6, fill: '#ab0303' }} label={(props: any) => (
+                        <text x={props.x} y={props.y - 15} fill="#ab0303" fontSize={12} fontWeight="bold" textAnchor="middle">{props.value}%</text>
+                      )} />
+                      <Line dataKey="meta" name="Meta Mensal (97%)" stroke="#2b2b2b" strokeDasharray="5 5" dot={false} strokeWidth={3} />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </>
+              )}
+
+              {expandedChart === 'pie' && (
+                <>
+                  <h2 className="text-center font-bold text-brand-dark-red uppercase text-xl tracking-widest mb-8">
+                    Proporção de Chamados
+                  </h2>
+                  {pieData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="90%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={120}
+                          outerRadius={200}
+                          paddingAngle={2}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend layout="vertical" align="right" verticalAlign="middle" />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-text-muted italic opacity-50 text-xl">
+                      Sem chamados no período
+                    </div>
+                  )}
+                </>
+              )}
+
+              {expandedChart === 'mtbf' && (
+                <>
+                  <h2 className="text-center font-bold text-brand-dark-red uppercase text-xl tracking-widest mb-8">
+                    MTBF - Tempo Médio Entre Falhas (Horas)
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <BarChart data={maintenanceData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                      <XAxis dataKey="name" fontSize={12} />
+                      <YAxis fontSize={12} />
+                      <Tooltip formatter={(v: number) => {
+                        const days = (v / 24).toFixed(1);
+                        return [`${v}h (${days} dias)`, 'MTBF'];
+                      }} />
+                      <Bar dataKey="mtbf" name="MTBF (Horas)" fill="#b76058" radius={[4, 4, 0, 0]} barSize={60} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
+              )}
+
+              {expandedChart === 'mttr' && (
+                <>
+                  <h2 className="text-center font-bold text-brand-dark-red uppercase text-xl tracking-widest mb-8">
+                    MTTR - Tempo Médio para Reparo (Horas)
+                  </h2>
+                  <ResponsiveContainer width="100%" height="90%">
+                    <BarChart data={maintenanceData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
+                      <XAxis dataKey="name" fontSize={12} />
+                      <YAxis fontSize={12} />
+                      <Tooltip formatter={(v: number) => {
+                        const days = (v / 24).toFixed(2);
+                        return [`${v}h (${days} dias)`, 'MTTR'];
+                      }} />
+                      <Bar dataKey="mttr" name="MTTR (Horas)" fill="#2b2b2b" radius={[4, 4, 0, 0]} barSize={60} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+   </>
+  );
 }
-
-

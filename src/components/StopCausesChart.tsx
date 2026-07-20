@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Maximize2, X } from 'lucide-react';
 import { Occurrence, EquipmentType } from '../types';
 
 interface StopCausesChartProps {
@@ -47,38 +48,50 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
     }));
   }, [occurrences, equipmentType]);
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Dynamic title based on equipmentType
   const chartTitle = `Principais Causas de Parada`;
 
-  return (
-    <div className="h-full flex flex-col min-h-[300px] bg-white p-6 rounded-[24px] shadow-xl border border-brand-dark-red/5">
+  const ChartContent = ({ expanded = false }: { expanded?: boolean }) => (
+    <>
       {/* Header */}
-      <h2 className="text-center font-bold text-brand-dark-red uppercase text-sm tracking-widest mb-6">
-        {chartTitle}
-      </h2>
+      <div className="relative mb-6">
+        {!expanded && (
+          <button
+            onClick={() => setIsExpanded(true)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-brand-red bg-gray-50 hover:bg-red-50 rounded-lg transition-all"
+            title="Expandir gráfico"
+          >
+            <Maximize2 className="w-4 h-4" /> 
+          </button>
+        )}
+        <h2 className={`text-center font-bold text-brand-dark-red uppercase tracking-widest ${expanded ? 'text-xl' : 'text-sm'}`}>
+          {chartTitle}
+        </h2>
+      </div>
 
-      {/* Chart Container - Increased height for more space */}
-      <div className="flex-1 flex flex-col justify-start gap-3">
+      {/* Chart Container */}
+      <div className={`flex-1 flex flex-col justify-start ${expanded ? 'gap-6' : 'gap-3'}`}>
         {topCauses.length > 0 ? (
           topCauses.map((cause, index) => (
             <div key={`${cause.causa}-${index}`} className="flex items-center gap-3 flex-1">
-              {/* Cause Label - Larger width */}
-              <div className="w-40 flex-shrink-0">
-                <p className="text-xs font-bold text-brand-dark-red uppercase truncate tracking-tight">
+              {/* Cause Label */}
+              <div className={`${expanded ? 'w-64' : 'w-40'} flex-shrink-0`}>
+                <p className={`${expanded ? 'text-base' : 'text-xs'} font-bold text-brand-dark-red uppercase truncate tracking-tight`}>
                   {cause.causa}
                 </p>
               </div>
 
               {/* Bar Container */}
               <div className="flex-1 flex items-center gap-2">
-                {/* Horizontal Bar */}
-                <div className="flex-1 h-10 bg-gray-100 rounded overflow-hidden relative">
+                <div className={`flex-1 ${expanded ? 'h-16' : 'h-10'} bg-gray-100 rounded overflow-hidden relative`}>
                   <div
                     className="h-full bg-[#7A1919] rounded transition-all duration-500 ease-out flex items-center justify-end pr-3"
                     style={{ width: `${cause.percentage}%`, minWidth: '2px' }}
                   >
                     {cause.percentage > 20 && (
-                      <span className="text-[10px] font-bold text-white truncate">
+                      <span className={`${expanded ? 'text-sm' : 'text-[10px]'} font-bold text-white truncate`}>
                         {cause.count}
                       </span>
                     )}
@@ -88,7 +101,6 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
             </div>
           ))
         ) : (
-          /* Empty State */
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -104,12 +116,37 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
 
       {/* Footer Info */}
       {topCauses.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-gray-100">
-          <p className="text-xs text-gray-500 italic text-center">
+        <div className={`mt-6 pt-4 border-t border-gray-100 ${expanded ? 'pb-4' : ''}`}>
+          <p className={`${expanded ? 'text-sm' : 'text-xs'} text-gray-500 italic text-center`}>
             Top 5 causas mais frequentes • Total de {topCauses.reduce((sum, c) => sum + c.count, 0)} ocorrências
           </p>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <div className="h-full flex flex-col min-h-[300px] bg-white p-6 rounded-[24px] shadow-xl border border-brand-dark-red/5 relative">
+        <ChartContent />
+      </div>
+
+      {/* Modal */}
+      {isExpanded && (
+        <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4 lg:p-12">
+          <div className="bg-white rounded-[24px] w-full h-full max-h-[800px] max-w-5xl relative flex flex-col p-8 lg:p-12 shadow-2xl">
+            <button 
+              onClick={() => setIsExpanded(false)}
+              className="absolute top-6 right-6 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"
+            >
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+            <div className="flex-1 flex flex-col overflow-y-auto">
+              <ChartContent expanded={true} />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
