@@ -152,7 +152,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
           </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={barData}>
+            <ComposedChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} tick={{ fill: '#555' }} />
               <YAxis domain={[40, 105]} fontSize={10} tick={{ fill: '#555' }} />
@@ -182,7 +182,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={trendData}>
+            <ComposedChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} />
               <YAxis domain={[60, 105]} fontSize={10} />
@@ -262,7 +262,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={maintenanceData}>
+            <BarChart data={maintenanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} />
               <YAxis fontSize={10} />
@@ -299,7 +299,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
         </h2>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={maintenanceData}>
+            <BarChart data={maintenanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} />
               <YAxis fontSize={10} />
@@ -338,7 +338,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     Disponibilidade por {selectedEquips.length === 1 ? 'Período' : 'Equipamento'} (%)
                   </h2>
                   <ResponsiveContainer width="100%" height="90%">
-                    <ComposedChart data={barData}>
+                    <ComposedChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} tick={{ fill: '#555' }} />
                       <YAxis domain={[40, 105]} fontSize={12} tick={{ fill: '#555' }} />
@@ -360,7 +360,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     Disponibilidade Média Mensal (%)
                   </h2>
                   <ResponsiveContainer width="100%" height="90%">
-                    <ComposedChart data={trendData}>
+                    <ComposedChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} />
                       <YAxis domain={[60, 105]} fontSize={12} />
@@ -415,7 +415,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     MTBF - Tempo Médio Entre Falhas (Horas)
                   </h2>
                   <ResponsiveContainer width="100%" height="90%">
-                    <BarChart data={maintenanceData}>
+                    <BarChart data={maintenanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} />
                       <YAxis fontSize={12} />
@@ -435,7 +435,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     MTTR - Tempo Médio para Reparo (Horas)
                   </h2>
                   <ResponsiveContainer width="100%" height="90%">
-                    <BarChart data={maintenanceData}>
+                    <BarChart data={maintenanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} />
                       <YAxis fontSize={12} />
