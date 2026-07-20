@@ -170,7 +170,6 @@ export default function OccurrenceModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 bg-brand-dark-red/40 backdrop-blur-sm"
-        onClick={onClose}
       />
       
       <motion.div
