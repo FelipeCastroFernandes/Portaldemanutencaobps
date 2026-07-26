@@ -105,8 +105,8 @@ export default function App() {
   const handleLogin = (loginData: { email?: string; username?: string; password?: string }) => {
     const user = users.find(u => {
       const inputStr = (loginData.email || loginData.username || '').toLowerCase().trim();
-      const userEmail = (u.email || '').toLowerCase();
-      const userUsername = ((u as any).username || '').toLowerCase();
+      const userEmail = (u.email || '').toLowerCase().trim();
+      const userUsername = ((u as any).username || '').toLowerCase().trim();
       
       const matchEmail = userEmail === inputStr;
       const matchUsername = userEmail.split('@')[0] === inputStr;
