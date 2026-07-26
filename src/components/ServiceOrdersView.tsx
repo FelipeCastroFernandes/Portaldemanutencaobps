@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from './PageHeader';
-import { CAUSAS_PARADA_BY_TYPE, Occurrence, User as UserType } from '../types';
+import { Occurrence, User as UserType } from '../types';
 import { MESES_ORDEM } from '../data/initialData';
 import { getLocalTimezoneOffset } from '../lib/utils';
 
@@ -940,14 +940,9 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                     className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
                   >
                     <option value="" disabled>Selecionar causa...</option>
-                    {stopCauses.length > 0
-                      ? stopCauses.filter(c => c.type === occToClose.type).map(causa => (
-                          <option key={causa.id} value={causa.name}>{causa.name}</option>
-                        ))
-                      : (CAUSAS_PARADA_BY_TYPE[occToClose.type] || []).map(causa => (
-                          <option key={causa} value={causa}>{causa}</option>
-                        ))
-                    }
+                    {stopCauses.filter(c => c.type === occToClose.type).map(causa => (
+                      <option key={causa.id} value={causa.name}>{causa.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -1146,14 +1141,9 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                     className="w-full bg-brand-dark-red/5 border-2 border-transparent focus:border-brand-dark-red focus:bg-white rounded-2xl px-5 py-4 text-sm font-bold text-brand-dark-red transition-all cursor-pointer"
                   >
                     <option value="">Selecionar causa...</option>
-                    {stopCauses.length > 0
-                      ? stopCauses.filter(c => c.type === editFormData.type).map(causa => (
-                          <option key={causa.id} value={causa.name}>{causa.name}</option>
-                        ))
-                      : (CAUSAS_PARADA_BY_TYPE[editFormData.type] || []).map(causa => (
-                          <option key={causa} value={causa}>{causa}</option>
-                        ))
-                    }
+                    {stopCauses.filter(c => c.type === editFormData.type).map(causa => (
+                      <option key={causa.id} value={causa.name}>{causa.name}</option>
+                    ))}
                   </select>
                 </div>
 

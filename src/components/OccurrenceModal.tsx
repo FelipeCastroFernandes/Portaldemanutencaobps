@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Plus, Calendar, Clock, User, Hash, CheckCircle2, History, AlertCircle, Trash2, PlusCircle, ClipboardList, PauseCircle, Play } from 'lucide-react';
-import { CAUSAS_PARADA_BY_TYPE, EquipmentType, Occurrence, User as UserType } from '../types';
+import { EquipmentType, Occurrence, User as UserType } from '../types';
 import { ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
 import { getLocalTimezoneOffset } from '../lib/utils';
 
@@ -277,14 +277,9 @@ export default function OccurrenceModal({
                       className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none"
                     >
                       <option value="" disabled>Selecionar causa...</option>
-                      {stopCauses.length > 0 
-                        ? stopCauses.filter(c => c.type === occToClose.type).map(causa => (
-                            <option key={causa.id} value={causa.name}>{causa.name}</option>
-                          ))
-                        : (CAUSAS_PARADA_BY_TYPE[occToClose.type] || []).map(causa => (
-                            <option key={causa} value={causa}>{causa}</option>
-                          ))
-                      }
+                      {stopCauses.filter(c => c.type === occToClose.type).map(causa => (
+                        <option key={causa.id} value={causa.name}>{causa.name}</option>
+                      ))}
                     </select>
                   </div>
 

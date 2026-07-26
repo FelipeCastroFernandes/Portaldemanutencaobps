@@ -26,42 +26,8 @@ export interface Task {
   archivedAt?: string;
 }
 
-export const CAUSAS_PARADA_BY_TYPE: Record<EquipmentType, string[]> = {
-  elevadores: [
-    'CORREDIÇAS',
-    'OPERADORES DE PORTA',
-    'PORTA DE PAVIMENTO',
-    'DRIVE / DRIVE QUEIMADO',
-    'OSCILAÇÃO DE ENERGIA',
-    'INTERMITÊNCIA DE QUADRO DE COMANDO',
-    'SENSORES',
-    'CABO DE MANOBRA',
-    'DANOS POR TERCEIROS',
-    'PORTA DE CABINA',
-    'ROLETE DE PORTA',
-    'ENCODER',
-    'POLIA TENSORA',
-    'GUIAS E CORREDIÇAS',
-    'OUTROS',
-    '(OUTROS) RESET',
-  ],
-  escadas: [
-    'DEGRAUS',
-    'CORRIMÃO',
-    'CORRENTE DE DEGRAUS',
-    'SENSORES DE SEGURANÇA',
-    'PLACA DE PENTES',
-    'DRIVER / CONJUNTO MOTOR REDUTOR',
-    'INVERSOR DE FREQUÊNCIA / QUADRO DE COMANDO',
-    'SISTEMA DE FREIOS',
-    'ACIONAMENTO DE EMERGÊNCIA (BOTÃO)',
-    'OSCILAÇÃO DE ENERGIA',
-    'SISTEMA DE LUBRIFICAÇÃO',
-    'DANOS POR TERCEIROS / VANDALISMO',
-    'OUTROS',
-    '(OUTROS) RESET',
-  ],
-};
+
+
 
 export interface StopCause {
   id: string;
