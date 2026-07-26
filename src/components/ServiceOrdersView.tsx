@@ -40,6 +40,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'paused'>('all');
   const [filterType, setFilterType] = useState<'all' | 'escadas' | 'elevadores'>('all');
   const [filterMonth, setFilterMonth] = useState<string>('all');
+  const [sortPriority, setSortPriority] = useState<'start' | 'openFirst' | 'closedFirst'>('start');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
   const [editingOccId, setEditingOccId] = useState<string | null>(null);
@@ -202,8 +203,21 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
         
         return matchesSearch && matchesStatus && matchesType && matchesMonth;
       })
-      .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime());
-  }, [occurrences, searchTerm, filterStatus, filterType, filterMonth]);
+      .sort((a, b) => {
+        if (sortPriority === 'openFirst') {
+          const isAOpen = !a.end;
+          const isBOpen = !b.end;
+          if (isAOpen && !isBOpen) return -1;
+          if (!isAOpen && isBOpen) return 1;
+        } else if (sortPriority === 'closedFirst') {
+          const isAClosed = !!a.end;
+          const isBClosed = !!b.end;
+          if (isAClosed && !isBClosed) return -1;
+          if (!isAClosed && isBClosed) return 1;
+        }
+        return new Date(b.start).getTime() - new Date(a.start).getTime();
+      });
+  }, [occurrences, searchTerm, filterStatus, filterType, filterMonth, sortPriority]);
 
   const stats = useMemo(() => {
     const total = filteredOrders.length;
@@ -402,29 +416,33 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                 value: stats.total, 
                 color: 'text-brand-dark-red', 
                 bg: 'bg-white',
-                pct: 100 
+                pct: 100,
+                sortAction: 'start' as const
               },
               { 
                 label: 'Em Andamento', 
                 value: stats.waiting, 
                 color: 'text-amber-600', 
                 bg: 'bg-amber-50',
-                pct: stats.total > 0 ? Math.round((stats.waiting / stats.total) * 100) : 0
+                pct: stats.total > 0 ? Math.round((stats.waiting / stats.total) * 100) : 0,
+                sortAction: 'openFirst' as const
               },
               { 
                 label: 'Concluídas', 
                 value: stats.concludedToday, 
                 color: 'text-emerald-600', 
                 bg: 'bg-emerald-50',
-                pct: stats.total > 0 ? Math.round((stats.concludedToday / stats.total) * 100) : 0
+                pct: stats.total > 0 ? Math.round((stats.concludedToday / stats.total) * 100) : 0,
+                sortAction: 'closedFirst' as const
               }
             ].map((stat, idx) => (
               <motion.div 
                 key={stat.label}
+                onClick={() => setSortPriority(stat.sortAction)}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className={`${stat.bg} p-6 rounded-2xl border-2 border-brand-dark-red/5 hover:border-brand-dark-red/10 transition-all group relative overflow-hidden`}
+                className={`${stat.bg} p-6 rounded-2xl border-2 ${sortPriority === stat.sortAction ? 'border-brand-dark-red/30 shadow-md' : 'border-brand-dark-red/5 hover:border-brand-dark-red/10'} transition-all group relative overflow-hidden cursor-pointer`}
               >
                 <div className="flex flex-col relative z-10">
                   <div className="flex justify-between items-start mb-1">
