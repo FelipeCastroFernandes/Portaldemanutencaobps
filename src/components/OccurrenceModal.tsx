@@ -486,7 +486,15 @@ export default function OccurrenceModal({
                   <p className="text-sm text-text-muted font-medium">Nenhum chamado registrado até o momento.</p>
                 </div>
               ) : (
-                occurrences.map((occ) => {
+                [...occurrences].sort((a, b) => {
+                  const isAOpen = !a.end;
+                  const isBOpen = !b.end;
+                  if (isAOpen && !isBOpen) return -1;
+                  if (!isAOpen && isBOpen) return 1;
+                  const dateA = a.end ? new Date(a.end).getTime() : new Date(a.start).getTime();
+                  const dateB = b.end ? new Date(b.end).getTime() : new Date(b.start).getTime();
+                  return dateB - dateA;
+                }).map((occ) => {
                   const isClosed = !!occ.end;
                   const start = new Date(occ.start);
                   const end = occ.end ? new Date(occ.end) : null;
@@ -581,14 +589,6 @@ export default function OccurrenceModal({
                       </div>
                     </div>
                   );
-                }).sort((a, b) => {
-                  const isAOpen = !a.end;
-                  const isBOpen = !b.end;
-                  if (isAOpen && !isBOpen) return -1;
-                  if (!isAOpen && isBOpen) return 1;
-                  const dateA = a.end ? new Date(a.end).getTime() : new Date(a.start).getTime();
-                  const dateB = b.end ? new Date(b.end).getTime() : new Date(b.start).getTime();
-                  return dateB - dateA;
                 })
               )}
             </div>
