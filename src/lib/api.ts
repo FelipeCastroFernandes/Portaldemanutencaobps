@@ -433,11 +433,11 @@ export async function getEquipmentData(type: EquipmentType): Promise<Maintenance
 
 // --- Mappers ---
 function profileToDb(profile: string | undefined): string {
-  if (!profile) return 'visualizar';
+  if (!profile) return 'visualização';
   const p = profile.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (p === 'gestor' || p === 'gestao') return 'Gestor';
   if (p === 'planejador') return 'Planejador';
-  return 'visualizar';
+  return 'visualização';
 }
 
 // Convert Supabase profile values to app format

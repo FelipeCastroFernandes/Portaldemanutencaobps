@@ -4,8 +4,10 @@
  */
 
 import { motion } from 'motion/react';
-import { ArrowUpDown, Power, ClipboardList, UserPlus } from 'lucide-react';
+import { ArrowUpDown, Power, ClipboardList, UserPlus, HelpCircle } from 'lucide-react';
 import { User } from '../types';
+import { useState } from 'react';
+import InstructionsModal from './InstructionsModal';
 
 interface MainPortalProps {
   onEscadas: () => void;
@@ -18,6 +20,7 @@ interface MainPortalProps {
 }
 
 export default function MainPortal({ onEscadas, onElevadores, onOrders, onTasks, onManageUsers, onLogout, currentUser }: MainPortalProps) {
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   console.log('[MainPortal] currentUser:', currentUser?.email, 'profile:', currentUser?.profile, '| len:', currentUser?.profile?.length);
   console.log('[MainPortal] check Gestor:', currentUser?.profile === 'Gestor');
   console.log('[MainPortal] check Planejador:', currentUser?.profile === 'Planejador');
@@ -27,8 +30,15 @@ export default function MainPortal({ onEscadas, onElevadores, onOrders, onTasks,
       <div className="absolute top-0 left-0 w-full h-1 bg-brand-red opacity-50" />
       <div className="absolute bottom-0 left-0 w-full h-1 bg-brand-red opacity-50" />
       
-      {/* Logout button */}
-      <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-50">
+      {/* Top Right Action Buttons */}
+      <div className="absolute top-6 right-6 sm:top-8 sm:right-8 z-50 flex items-center gap-3">
+        <button 
+          onClick={() => setIsHelpOpen(true)}
+          className="text-white bg-white/10 hover:bg-white/20 flex items-center justify-center w-10 h-10 rounded-full border border-white/5 shadow-lg backdrop-blur-sm cursor-pointer transition-all"
+          title="Guia Operacional Integrado"
+        >
+          <HelpCircle size={20} />
+        </button>
         <button 
           onClick={onLogout}
           className="text-white bg-white/10 hover:bg-white/20 flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all px-5 py-2.5 rounded-full border border-white/5 shadow-lg backdrop-blur-sm cursor-pointer"
@@ -142,6 +152,8 @@ export default function MainPortal({ onEscadas, onElevadores, onOrders, onTasks,
           MAINTENANCE
         </span>
       </div>
+
+      <InstructionsModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </div>
   );
 }
