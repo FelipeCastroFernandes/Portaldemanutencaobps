@@ -38,6 +38,11 @@ export default function App() {
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [stopCauses, setStopCauses] = useState<{id: string; type: string; name: string}[]>([]);
+
+  const reloadStopCauses = async () => {
+    const fresh = await getStopCauses().catch(() => []);
+    setStopCauses(fresh);
+  };
   const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false);
   useEffect(() => {
     async function loadData() {
