@@ -63,6 +63,13 @@ export const CAUSAS_PARADA_BY_TYPE: Record<EquipmentType, string[]> = {
   ],
 };
 
+export interface StopCause {
+  id: string;
+  type: EquipmentType;
+  name: string;
+  createdAt?: string;
+}
+
 export interface OccurrenceStatusPeriod {
   status: string;
   start: string;

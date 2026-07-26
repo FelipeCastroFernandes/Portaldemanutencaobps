@@ -19,8 +19,7 @@ import Login from './components/Login';
 import OccurrenceModal from './components/OccurrenceModal';
 import { formatTime } from './lib/utils';
 
-import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteApiUser, getOccurrences, saveOccurrence as apiSaveOccurrence, updateOccurrence as apiUpdateOccurrence, deleteOccurrence as apiDeleteOccurrence, getEquipmentData } from './lib/api';
-
+import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteApiUser, getOccurrences, saveOccurrence as apiSaveOccurrence, updateOccurrence as apiUpdateOccurrence, deleteOccurrence as apiDeleteOccurrence, getEquipmentData, getStopCauses } from './lib/api';
 function normalizeUserProfile(user: User): User {
   const profile = user.profile as string;
   if (!profile) return { ...user, profile: 'visualizar' };
@@ -38,9 +37,8 @@ export default function App() {
   const [elevadorData, setElevadorData] = useState<MaintenanceRecord[]>(INITIAL_ELEVADOR_DATA);
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [stopCauses, setStopCauses] = useState<{id: string; type: string; name: string}[]>([]);
   const [isOccurrenceModalOpen, setIsOccurrenceModalOpen] = useState(false);
-
-  // Load from Supabase/localStorage if exists
   useEffect(() => {
     async function loadData() {
       try {
@@ -48,10 +46,12 @@ export default function App() {
         const dbElevadores = await getEquipmentData('elevadores').catch(() => []);
         const dbOccurrences = await getOccurrences().catch(() => []);
         const dbUsers = await getUsers().catch(() => []);
+        const dbStopCauses = await getStopCauses().catch(() => []);
 
         if (dbEscadas.length > 0) setEscadaData(dbEscadas);
         if (dbElevadores.length > 0) setElevadorData(dbElevadores);
         if (dbOccurrences.length > 0) setOccurrences(dbOccurrences);
+        if (dbStopCauses.length > 0) setStopCauses(dbStopCauses);
 
         let loadedUsers = [...dbUsers];
 
@@ -348,6 +348,7 @@ export default function App() {
           <ServiceOrdersView 
             occurrences={occurrences} 
             users={users}
+            stopCauses={stopCauses}
             currentUser={currentUser}
             onBack={() => setActivePage('cover')}
             onUpdate={handleUpdateOccurrence}
@@ -398,6 +399,7 @@ export default function App() {
         onClose={() => setIsOccurrenceModalOpen(false)}
         occurrences={occurrences}
         users={users}
+        stopCauses={stopCauses}
         currentUser={currentUser}
         onAdd={handleAddOccurrence}
         onUpdate={handleUpdateOccurrence}

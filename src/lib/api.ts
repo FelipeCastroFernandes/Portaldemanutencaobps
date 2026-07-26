@@ -26,6 +26,22 @@ const saveLocal = () => {
   }
 };
 
+// --- Stop Causes ---
+export async function getStopCauses(): Promise<{ id: string; type: string; name: string }[]> {
+  try {
+    if (isSupabaseConfigured() && supabase) {
+      const { data, error } = await supabase.from('stop_causes').select('*').order('name');
+      if (!error && data) {
+        return data;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed fetching stop_causes from Supabase:", e);
+  }
+  return [];
+}
+
+
 // --- Users ---
 export async function getUsers(): Promise<User[]> {
   try {

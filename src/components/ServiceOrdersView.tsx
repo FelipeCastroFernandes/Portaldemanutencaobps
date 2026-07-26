@@ -33,14 +33,15 @@ interface ServiceOrdersViewProps {
   onUpdate: (occ: Occurrence) => void;
   onDelete: (id: string) => void;
   onAdd?: (occ: Occurrence) => Promise<void> | void;
+  stopCauses?: {id: string; type: string; name: string}[];
 }
 
-export default function ServiceOrdersView({ occurrences, users, currentUser, onBack, onUpdate, onDelete, onAdd }: ServiceOrdersViewProps) {
+export default function ServiceOrdersView({ occurrences, users, currentUser, onBack, onUpdate, onDelete, onAdd, stopCauses = [] }: ServiceOrdersViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'closed' | 'paused'>('all');
   const [filterType, setFilterType] = useState<'all' | 'escadas' | 'elevadores'>('all');
   const [filterMonth, setFilterMonth] = useState<string>('all');
-  const [sortPriority, setSortPriority] = useState<'start' | 'openFirst' | 'closedFirst'>('start');
+  const [sortPriority, setSortPriority] = useState<'start' | 'openFirst' | 'closedFirst'>('openFirst');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
   const [editingOccId, setEditingOccId] = useState<string | null>(null);
