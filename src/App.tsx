@@ -174,30 +174,63 @@ export default function App() {
 
   // Recalculate indicators based on occurrences
   const processedData = useMemo(() => {
+    const calculateOperatingMs = (startMs: number, endMs: number, type: EquipmentType): number => {
+      if (startMs >= endMs) return 0;
+      if (type === 'elevadores') return endMs - startMs;
+      
+      let ms = 0;
+      let cur = new Date(startMs);
+      while (cur.getTime() < endMs) {
+        const dayStart = new Date(cur);
+        dayStart.setHours(10, 0, 0, 0);
+        const dayEnd = new Date(cur);
+        dayEnd.setHours(22, 0, 0, 0);
+        
+        if (cur.getTime() < dayStart.getTime()) {
+          cur = new Date(Math.min(endMs, dayStart.getTime()));
+        } else if (cur.getTime() >= dayEnd.getTime()) {
+          const nextDay = new Date(cur);
+          nextDay.setDate(nextDay.getDate() + 1);
+          nextDay.setHours(0, 0, 0, 0);
+          cur = new Date(Math.min(endMs, nextDay.getTime()));
+        } else {
+          const chunkEnd = Math.min(endMs, dayEnd.getTime());
+          ms += (chunkEnd - cur.getTime());
+          cur = new Date(chunkEnd);
+        }
+      }
+      return ms;
+    };
+
     const getExtraScopeApprovalMs = (occ: Occurrence) => {
+      const calcMs = (s: number, e: number) => calculateOperatingMs(s, e, occ.type);
+      
       if (occ.extraScopeStart) {
         const pauseStart = new Date(occ.extraScopeStart).getTime();
         const pauseEnd = occ.extraScopeEnd
           ? new Date(occ.extraScopeEnd).getTime()
           : Date.now();
-        return Math.max(0, pauseEnd - pauseStart);
+        return calcMs(pauseStart, pauseEnd);
       }
 
-      if (occ.extraScopeApprovalMs) return occ.extraScopeApprovalMs;
+      if (occ.extraScopeApprovalMs) {
+         return occ.type === 'escadas' ? occ.extraScopeApprovalMs / 2 : occ.extraScopeApprovalMs;
+      }
 
       return (occ.statusHistory || []).reduce((total, period) => {
         if (period.status !== 'Aguardando Aprovação de Escopo Extra' || !period.end) return total;
-        return total + Math.max(0, new Date(period.end).getTime() - new Date(period.start).getTime());
+        return total + calcMs(new Date(period.start).getTime(), new Date(period.end).getTime());
       }, 0);
     };
 
     const splitDowntimeAcrossMonths = (occ: Occurrence): { mes: string; downtimeMs: number; chamados: number }[] => {
       if (!occ.end) return [];
 
-      const extraMs = getExtraScopeApprovalMs(occ);
-      const start = new Date(occ.start);
       const end = new Date(occ.end);
-      const grossMs = Math.max(0, end.getTime() - start.getTime());
+      const start = new Date(occ.start);
+
+      const extraMs = getExtraScopeApprovalMs(occ);
+      const grossOperatingMs = calculateOperatingMs(start.getTime(), end.getTime(), occ.type);
 
       const startMonth = start.getMonth();
       const startYear = start.getFullYear();
@@ -208,18 +241,20 @@ export default function App() {
         return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
       }
 
-      if (grossMs === 0) {
+      if (grossOperatingMs === 0) {
         return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
       }
 
       if (startMonth === endMonth && startYear === endYear) {
-        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: grossMs - extraMs, chamados: 1 }];
+        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: Math.max(0, grossOperatingMs - extraMs), chamados: 1 }];
       }
 
       const overlapMs = (year: number, month: number): number => {
         const monthStart = new Date(year, month, 1).getTime();
         const monthEnd = new Date(year, month + 1, 1).getTime();
-        return Math.max(0, Math.min(end.getTime(), monthEnd) - Math.max(start.getTime(), monthStart));
+        const actualStart = Math.max(start.getTime(), monthStart);
+        const actualEnd = Math.min(end.getTime(), monthEnd);
+        return calculateOperatingMs(actualStart, actualEnd, occ.type);
       };
 
       const months: { year: number; month: number; ms: number }[] = [];
