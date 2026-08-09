@@ -90,11 +90,9 @@ export default function StopCausesChart({ occurrences, equipmentType }: StopCaus
                     className="h-full bg-[#7A1919] rounded transition-all duration-500 ease-out flex items-center justify-end pr-3"
                     style={{ width: `${cause.percentage}%`, minWidth: '2px' }}
                   >
-                    {cause.percentage > 20 && (
                       <span className={`${expanded ? 'text-sm' : 'text-[10px]'} font-bold text-white truncate`}>
                         {cause.count}
                       </span>
-                    )}
                   </div>
                 </div>
               </div>
