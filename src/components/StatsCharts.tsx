@@ -155,7 +155,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
             <ComposedChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} tick={{ fill: '#555' }} />
-              <YAxis domain={[40, 105]} fontSize={10} tick={{ fill: '#555' }} />
+              <YAxis domain={[0, 105]} fontSize={10} tick={{ fill: '#555' }} />
               <Tooltip 
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                 formatter={(v: number) => [`${v}%`, 'Disponibilidade']}
@@ -185,7 +185,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
             <ComposedChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis dataKey="name" fontSize={10} />
-              <YAxis domain={[60, 105]} fontSize={10} />
+              <YAxis domain={[0, 105]} fontSize={10} />
               <Tooltip formatter={(v: number) => [`${v}%`, 'Média']} />
               <Legend verticalAlign="top" height={36} />
               <Line type="monotone" dataKey="disp" name="Média Mensal (%)" stroke="#ab0303" strokeWidth={3} dot={{ r: 5, fill: '#ab0303' }} label={(props: any) => (
@@ -341,7 +341,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     <ComposedChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} tick={{ fill: '#555' }} />
-                      <YAxis domain={[40, 105]} fontSize={12} tick={{ fill: '#555' }} />
+                      <YAxis domain={[0, 105]} fontSize={12} tick={{ fill: '#555' }} />
                       <Tooltip 
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                         formatter={(v: number) => [`${v}%`, 'Disponibilidade']}
@@ -363,7 +363,7 @@ export default function StatsCharts({ type, data, allData, selectedEquips, selec
                     <ComposedChart data={trendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
                       <XAxis dataKey="name" fontSize={12} />
-                      <YAxis domain={[60, 105]} fontSize={12} />
+                      <YAxis domain={[0, 105]} fontSize={12} />
                       <Tooltip formatter={(v: number) => [`${v}%`, 'Média']} />
                       <Legend verticalAlign="top" height={36} />
                       <Line type="monotone" dataKey="disp" name="Média Mensal (%)" stroke="#ab0303" strokeWidth={4} dot={{ r: 6, fill: '#ab0303' }} label={(props: any) => (
