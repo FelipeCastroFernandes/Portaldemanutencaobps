@@ -26,6 +26,7 @@ interface FormDataState {
   createdBy: string;
   startDate: string;
   startTime: string;
+  passageiro_preso: boolean;
 }
 
 interface ReturnFormDataState {
@@ -53,6 +54,7 @@ const getInitialFormData = (currentUser: UserType | null): FormDataState => ({
   createdBy: currentUser?.fullName || '',
   startDate: new Date().toISOString().split('T')[0],
   startTime: getInitialTime(),
+  passageiro_preso: false,
 });
 
 const getInitialReturnFormData = (): ReturnFormDataState => ({
@@ -78,9 +80,36 @@ export default function OccurrenceModal({
   const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
   const [closingOccId, setClosingOccId] = useState<string | null>(null);
   const [deletingOccId, setDeletingOccId] = useState<string | null>(null);
+  const [createdOccurrence, setCreatedOccurrence] = useState<Occurrence | null>(null);
   
   const [formData, setFormData] = useState<FormDataState>(getInitialFormData(currentUser));
   const [returnFormData, setReturnFormData] = useState<ReturnFormDataState>(getInitialReturnFormData());
+
+  const sendWhatsAppAlert = (occ: Occurrence) => {
+    const isStoppedStr = occ.is_equipment_stopped ? "SIM" : "NÃO";
+    const dateStr = new Date(occ.start).toLocaleDateString('pt-BR');
+    const timeStr = new Date(occ.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const appUrl = `${window.location.origin}/ordens-servico/${occ.callNumber}`;
+
+    const passageiroInfo = (occ.type === 'elevadores' && occ.is_equipment_stopped)
+      ? `\n🆘 Passageiro Preso? ${occ.passageiro_preso || 'Não'}` 
+      : '';
+
+    const message = `🚨 AVISO: CHAMADO ABERTO (ONE ELEVADORES)
+
+📍 Equipamento: ${occ.type === 'escadas' ? 'Escadas Rolantes' : 'Elevadores'} - ${occ.equip}
+⛔ Equipamento Parado? ${isStoppedStr}${passageiroInfo}
+📅 Data/Hora Parada: ${dateStr} às ${timeStr}
+👤 Quem abriu: ${occ.createdBy}
+🏢 Atendente/Empresa: ${occ.attendant}
+🔢 OS Fornecedor: #${occ.callNumber}
+
+🔗 Acesse a OS no App:
+${appUrl}`;
+
+    const encodedMsg = encodeURIComponent(message);
+    window.open(`https://web.whatsapp.com/send?text=${encodedMsg}`, '_blank');
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,13 +123,17 @@ export default function OccurrenceModal({
       createdBy: currentUser?.profile === 'Gestor' ? formData.createdBy : (currentUser?.fullName || 'Sistema'),
       start: `${formData.startDate}T${formData.startTime}:00${getLocalTimezoneOffset()}`,
       is_equipment_stopped: formData.is_equipment_stopped,
+      equipamento_parado: formData.is_equipment_stopped ? 'Sim' : 'Não',
+      passageiro_preso: formData.type === 'elevadores' && formData.is_equipment_stopped ? (formData.passageiro_preso ? 'Sim' : 'Não') : 'Não',
+      tipo_ocorrencia: 'CORRETIVA',
     };
     
     onAdd(newOcc);
     
     // Reset form to initial state
     setFormData(getInitialFormData(currentUser));
-    setActiveTab('history');
+    
+    setCreatedOccurrence(newOcc);
   };
 
   const handleReturnSubmit = (e: React.FormEvent) => {
@@ -342,6 +375,36 @@ export default function OccurrenceModal({
               );
             })()
           ) : activeTab === 'new' ? (
+            createdOccurrence ? (
+              <div className="text-center py-12 px-6 flex flex-col items-center">
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600">
+                  <CheckCircle2 size={40} />
+                </div>
+                <h3 className="text-xl font-black text-brand-dark-red uppercase tracking-tight mb-2">CHAMADO REGISTRADO COM SUCESSO!</h3>
+                <p className="text-sm text-text-muted mb-8 max-w-sm">
+                  A Ordem de Serviço #{createdOccurrence.callNumber} foi salva. Notifique a equipe interna clicando no botão abaixo.
+                </p>
+                <div className="flex flex-col gap-3 w-full max-w-sm">
+                  <button
+                    type="button"
+                    onClick={() => sendWhatsAppAlert(createdOccurrence)}
+                    className="w-full bg-[#25D366] text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-[#1da851] transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                    📲 AVISAR EQUIPE NO WHATSAPP
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreatedOccurrence(null);
+                      setActiveTab('history');
+                    }}
+                    className="w-full bg-gray-100 text-gray-600 py-4 rounded-xl font-black uppercase tracking-widest text-xs hover:bg-gray-200 transition-all"
+                  >
+                    Ver Histórico
+                  </button>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -384,6 +447,23 @@ export default function OccurrenceModal({
                   <option value="sim">Sim</option>
                 </select>
               </div>
+
+              {formData.type === 'elevadores' && formData.is_equipment_stopped && (
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-brand-dark-red tracking-widest flex items-center gap-1">
+                    <AlertCircle size={10} /> Passageiro Preso?
+                  </label>
+                  <select 
+                    required
+                    value={formData.passageiro_preso ? 'sim' : 'nao'}
+                    onChange={(e) => setFormData({ ...formData, passageiro_preso: e.target.value === 'sim' })}
+                    className="w-full bg-red-50 border border-brand-red/50 text-brand-dark-red rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red/50 transition-shadow appearance-none cursor-pointer font-bold"
+                  >
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim (Prioridade Máxima)</option>
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -478,6 +558,7 @@ export default function OccurrenceModal({
                 Abrir Chamado <Plus size={18} className="group-hover:rotate-90 transition-transform" />
               </button>
             </form>
+            )
           ) : (
             <div className="space-y-3">
               {occurrences.length === 0 ? (

@@ -280,7 +280,11 @@ export default function App() {
     };
 
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
-      const typeOccurrences = occurrences.filter(o => o.type === type);
+      const typeOccurrences = occurrences.filter(o => 
+        o.type === type && 
+        o.tipo_ocorrencia === 'CORRETIVA' && 
+        o.equipamento_parado === 'Sim'
+      );
       if (typeOccurrences.length === 0) return baseData;
 
       const spans: { mes: string; equip: string; downtimeMs: number; chamados: number }[] = [];

@@ -5,7 +5,7 @@
 
 export type EquipmentType = 'escadas' | 'elevadores';
 
-export type ProfileLevel = 'Gestor' | 'Planejador' | 'visualizar';
+export type ProfileLevel = 'Gestor' | 'Planejador' | 'visualizar' | 'Supervisor';
 
 export type TaskStatus = 'backlog' | 'todo' | 'doing' | 'done';
 export type TaskImpact = 'low' | 'medium' | 'critical';
@@ -72,6 +72,10 @@ export interface Occurrence {
   extraScopeStart?: string; // ISO string - when the extra scope pause started
   extraScopeEnd?: string; // ISO string - when the extra scope pause ended
   closedBy?: string; // User who registered the closure
+  tipo_ocorrencia?: 'CORRETIVA' | 'PREVENTIVA';
+  url_relatorio?: string;
+  equipamento_parado?: 'Sim' | 'Não';
+  passageiro_preso?: 'Sim' | 'Não';
 }
 
 export interface MaintenanceRecord {

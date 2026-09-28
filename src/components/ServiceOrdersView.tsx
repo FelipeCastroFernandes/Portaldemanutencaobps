@@ -49,14 +49,17 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  const getInitialReturnFormData = () => ({
-    technician: '',
-    reason: '',
-    causa_parada: '',
-    closedBy: currentUser?.fullName || '',
-    endDate: new Date().toISOString().split('T')[0],
-    endTime: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-  });
+  const getInitialReturnFormData = (occ?: Occurrence) => {
+    const prefillEnd = occ?.end ? new Date(occ.end) : new Date();
+    return {
+      technician: occ?.technician || '',
+      reason: occ?.reason || '',
+      causa_parada: '',
+      closedBy: currentUser?.fullName || '',
+      endDate: prefillEnd.toISOString().split('T')[0],
+      endTime: prefillEnd.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    };
+  };
 
   const [returnFormData, setReturnFormData] = useState(getInitialReturnFormData());
 
@@ -130,7 +133,8 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
 
   const handleOpenReturnForm = (orderId: string) => {
     setClosingOccId(orderId);
-    setReturnFormData(getInitialReturnFormData());
+    const occ = occurrences.find(o => o.id === orderId);
+    setReturnFormData(getInitialReturnFormData(occ));
   };
 
   const handlePauseExtraScope = (occ: Occurrence) => {
@@ -546,6 +550,11 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest inline-block w-fit ${order.type === 'escadas' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
                           {order.type === 'escadas' ? 'Escada' : 'Elevador'}
                         </span>
+                        {order.tipo_ocorrencia && (
+                          <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest inline-block w-fit ${order.tipo_ocorrencia === 'CORRETIVA' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                            {order.tipo_ocorrencia}
+                          </span>
+                        )}
                       </div>
 
                       {/* Ativo */}
@@ -591,8 +600,8 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                       </div>
 
                       {/* Status */}
-                      <div className="md:col-span-2 flex items-center justify-between gap-6 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
-                        <div className="w-full flex-1">
+                      <div className="md:col-span-2 flex flex-col justify-center gap-2 border-l-0 md:border-l-2 border-brand-dark-red/5 md:pl-6">
+                        <div className="w-full">
                           <div className="flex justify-between items-center mb-1">
                             <span className={`text-[9px] font-black uppercase tracking-widest ${order.end ? 'text-emerald-600' : isPaused(order) ? 'text-amber-600' : 'text-amber-600'}`}>
                               {order.end ? 'Concluída' : isPaused(order) ? 'Pausado' : 'Em andamento'}
@@ -606,8 +615,17 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                             />
                           </div>
                         </div>
-
-<div className="flex items-center gap-2" />
+                        {order.url_relatorio && (
+                          <a 
+                            href={order.url_relatorio}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[9px] font-black uppercase tracking-widest transition-colors inline-flex items-center gap-1 w-fit border border-blue-200 mt-1"
+                          >
+                            📄 Ver Relatório Original
+                          </a>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -823,7 +841,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
                       </button>
                     )
                   )}
-                  {!selectedOrderDetails.end && (currentUser?.profile === 'Gestor' || currentUser?.profile === 'Planejador') && (
+                  {!selectedOrderDetails.end && currentUser?.profile !== 'Supervisor' && (
                     <button
                       onClick={() => {
                         const id = selectedOrderDetails.id;
