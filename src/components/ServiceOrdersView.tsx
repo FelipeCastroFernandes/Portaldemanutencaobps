@@ -23,7 +23,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import PageHeader from './PageHeader';
 import { Occurrence, User as UserType } from '../types';
 import { MESES_ORDEM } from '../data/initialData';
-import { getLocalTimezoneOffset } from '../lib/utils';
+import { getLocalTimezoneOffset, getMonthFromDate } from '../lib/utils';
 
 interface ServiceOrdersViewProps {
   occurrences: Occurrence[];
@@ -203,7 +203,7 @@ export default function ServiceOrdersView({ occurrences, users, currentUser, onB
           filterType === 'all' || 
           order.type === filterType;
 
-        const orderMonth = MESES_ORDEM[new Date(order.start).getMonth()];
+        const orderMonth = getMonthFromDate(order.start);
         const matchesMonth = filterMonth === 'all' || orderMonth === filterMonth;
         
         return matchesSearch && matchesStatus && matchesType && matchesMonth;

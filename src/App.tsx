@@ -224,10 +224,8 @@ export default function App() {
     };
 
     const splitDowntimeAcrossMonths = (occ: Occurrence): { mes: string; downtimeMs: number; chamados: number }[] => {
-      if (!occ.end) return [];
-
-      const end = new Date(occ.end);
       const start = new Date(occ.start);
+      const end = occ.end ? new Date(occ.end) : new Date();
 
       const extraMs = getExtraScopeApprovalMs(occ);
       const grossOperatingMs = calculateOperatingMs(start.getTime(), end.getTime(), occ.type);
@@ -237,7 +235,7 @@ export default function App() {
       const endMonth = end.getMonth();
       const endYear = end.getFullYear();
 
-      if (occ.is_equipment_stopped === false) {
+      if (occ.is_equipment_stopped === false || occ.equipamento_parado === 'Não') {
         return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
       }
 
@@ -272,6 +270,10 @@ export default function App() {
         if (curMonth === 12) { curMonth = 0; curYear++; }
       }
 
+      if (months.length === 0) {
+        return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
+      }
+
       return months.map((m, i) => ({
         mes: MESES_ORDEM[m.month],
         downtimeMs: Math.round(Math.max(0, m.ms - extraMs * (m.ms / totalMs))),
@@ -282,8 +284,8 @@ export default function App() {
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
       const typeOccurrences = occurrences.filter(o => 
         o.type === type && 
-        o.tipo_ocorrencia === 'CORRETIVA' && 
-        o.equipamento_parado === 'Sim'
+        (o.tipo_ocorrencia === 'CORRETIVA' || !o.tipo_ocorrencia) && 
+        (o.equipamento_parado === 'Sim' || o.is_equipment_stopped === true || o.equipamento_parado === undefined || o.is_equipment_stopped === undefined)
       );
       if (typeOccurrences.length === 0) return baseData;
 

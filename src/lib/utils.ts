@@ -6,6 +6,32 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { MaintenanceRecord, EquipmentType } from '../types';
+import { MESES_ORDEM } from '../data/initialData';
+
+export function getMonthFromDate(dateInput: string | Date | undefined | null): string | null {
+  if (!dateInput) return null;
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? null : MESES_ORDEM[dateInput.getMonth()];
+  }
+  const str = String(dateInput).trim();
+  if (!str) return null;
+
+  // Try YYYY-MM match to be timezone-independent (e.g. UTC-3 shifting 00:00:00 UTC to previous day)
+  const isoMatch = str.match(/^\d{4}-(\d{2})/);
+  if (isoMatch) {
+    const monthNum = parseInt(isoMatch[1], 10);
+    if (monthNum >= 1 && monthNum <= 12) {
+      return MESES_ORDEM[monthNum - 1];
+    }
+  }
+
+  const parsed = new Date(str.includes('T') ? str : str.replace(' ', 'T'));
+  if (!isNaN(parsed.getTime())) {
+    return MESES_ORDEM[parsed.getMonth()];
+  }
+
+  return null;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

@@ -8,7 +8,7 @@ import { Filter, AlertTriangle, TrendingUp, Hash, Clock, Check, ChevronDown } fr
 import { motion, AnimatePresence } from 'motion/react';
 import { MaintenanceRecord, EquipmentType, Occurrence } from '../types';
 import { MESES_ORDEM, ESCADAS_LIST, ELEVADORES_LIST } from '../data/initialData';
-import { calcDisp } from '../lib/utils';
+import { calcDisp, getMonthFromDate } from '../lib/utils';
 import StatsCharts from './StatsCharts';
 import PageHeader from './PageHeader';
 
@@ -28,9 +28,25 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence, oc
 
   const equipList = type === 'escadas' ? ESCADAS_LIST : ELEVADORES_LIST;
   const mesesDisponiveis = useMemo(() => {
-    const meses = Array.from(new Set(data.map(d => d.mes)));
-    return MESES_ORDEM.filter(m => meses.includes(m));
-  }, [data]);
+    const setMeses = new Set<string>();
+
+    // 1. Extrai meses da base estática/resumida (MaintenanceRecord)
+    data.forEach(d => {
+      if (d.mes) setMeses.add(d.mes);
+    });
+
+    // 2. Extrai meses dinamicamente da massa total de ocorrências (payload Supabase)
+    occurrences.forEach(o => {
+      if (!o.type || o.type === type) {
+        const startMonth = getMonthFromDate(o.start);
+        if (startMonth) setMeses.add(startMonth);
+        const endMonth = getMonthFromDate(o.end);
+        if (endMonth) setMeses.add(endMonth);
+      }
+    });
+
+    return MESES_ORDEM.filter(m => setMeses.has(m));
+  }, [data, occurrences, type]);
 
   const filteredData = useMemo(() => {
     let result = [...data];
@@ -42,7 +58,10 @@ export default function DashboardView({ type, data, onBack, onOpenOccurrence, oc
   const filteredOccurrences = useMemo(() => {
     let result = [...occurrences];
     if (selectedMonths.length > 0) {
-      result = result.filter(o => selectedMonths.includes(MESES_ORDEM[new Date(o.start).getMonth()]));
+      result = result.filter(o => {
+        const month = getMonthFromDate(o.start);
+        return month ? selectedMonths.includes(month) : false;
+      });
     }
     if (selectedEquips.length > 0) {
       result = result.filter(o => selectedEquips.includes(o.equip));
