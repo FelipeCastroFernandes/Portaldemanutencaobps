@@ -224,8 +224,11 @@ export default function App() {
     };
 
     const splitDowntimeAcrossMonths = (occ: Occurrence): { mes: string; downtimeMs: number; chamados: number }[] => {
+      // Considerar apenas chamados concluídos (com data fim registrada)
+      if (!occ.end) return [];
+
       const start = new Date(occ.start);
-      const end = occ.end ? new Date(occ.end) : new Date();
+      const end = new Date(occ.end);
 
       const extraMs = getExtraScopeApprovalMs(occ);
       const grossOperatingMs = calculateOperatingMs(start.getTime(), end.getTime(), occ.type);
@@ -284,6 +287,7 @@ export default function App() {
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
       const typeOccurrences = occurrences.filter(o => 
         o.type === type && 
+        !!o.end && 
         (o.tipo_ocorrencia === 'CORRETIVA' || !o.tipo_ocorrencia) && 
         (o.equipamento_parado === 'Sim' || o.is_equipment_stopped === true || o.equipamento_parado === undefined || o.is_equipment_stopped === undefined)
       );
