@@ -277,14 +277,19 @@ export default function App() {
         return [{ mes: MESES_ORDEM[startMonth], downtimeMs: 0, chamados: 1 }];
       }
 
-      return months.map((m, i) => ({
+      // Para ocorrências multi-mês: o chamado é registrado no mês de início,
+    // mas o downtime é distribuído proporcionalmente por cada mês.
+    // O MTBF e MTTR são calculados por mês com base nos chamados e downtime de cada mês.
+    return months.map((m, i) => ({
         mes: MESES_ORDEM[m.month],
         downtimeMs: Math.round(Math.max(0, m.ms - extraMs * (m.ms / totalMs))),
+        // O chamado é contado apenas no mês de início (abertura da OS)
         chamados: i === 0 ? 1 : 0,
       }));
     };
 
     const calculateForType = (type: EquipmentType, baseData: MaintenanceRecord[]) => {
+      // Apenas ocorrências concluídas (end preenchido) entram no cálculo
       const typeOccurrences = occurrences.filter(o => 
         o.type === type && 
         !!o.end && 
@@ -293,33 +298,40 @@ export default function App() {
       );
       if (typeOccurrences.length === 0) return baseData;
 
-      const spans: { mes: string; equip: string; downtimeMs: number; chamados: number }[] = [];
+      // Acumula downtime e chamados por (equip + mês) usando separador seguro (§)
+      // para evitar conflito com nomes de equipamentos que contêm "-" (ex: "CARGA 1")
+      const hoursByMonth: Record<string, { downtimeMs: number; chamados: number }> = {};
 
       typeOccurrences.forEach(occ => {
         const parts = splitDowntimeAcrossMonths(occ);
-        parts.forEach(p => spans.push({ ...p, equip: occ.equip }));
+        parts.forEach(p => {
+          const key = `${occ.equip}§${p.mes}`;
+          if (!hoursByMonth[key]) hoursByMonth[key] = { downtimeMs: 0, chamados: 0 };
+          hoursByMonth[key].downtimeMs += p.downtimeMs;
+          hoursByMonth[key].chamados += p.chamados;
+        });
       });
-
-      const hoursByMonth: Record<string, { downtimeMs: number; chamados: number }> = spans.reduce((acc, s) => {
-        const key = `${s.equip}-${s.mes}`;
-        if (!acc[key]) acc[key] = { downtimeMs: 0, chamados: 0 };
-        acc[key].downtimeMs += s.downtimeMs;
-        acc[key].chamados += s.chamados;
-        return acc;
-      }, {} as Record<string, { downtimeMs: number; chamados: number }>);
 
       const updatedData = [...baseData];
 
       Object.entries(hoursByMonth).forEach(([key, value]) => {
-        const [equip, mes] = key.split('-');
+        const sepIdx = key.indexOf('§');
+        const equip = key.slice(0, sepIdx);
+        const mes = key.slice(sepIdx + 1);
         const totalHours = type === 'elevadores' ? (HORAS_MES[mes] ?? 720) : (HORAS_ESCADA_MES[mes] ?? 360);
 
         const downtimeHours = value.downtimeMs / (1000 * 60 * 60);
         const chamados = value.chamados;
-        const effectiveChamados = Math.max(chamados, downtimeHours > 0 ? 1 : 0);
-        const disp = Math.max(0, Math.min(100, ((totalHours - downtimeHours) / totalHours) * 100));
-        const mtbfHours = effectiveChamados > 0 ? (totalHours - downtimeHours) / effectiveChamados : totalHours;
-        const mttrHours = effectiveChamados > 0 ? downtimeHours / effectiveChamados : 0;
+
+        // MTBF = Uptime total / Número de falhas (chamados corretivos do mês)
+        // MTTR = Downtime total / Número de falhas
+        // Se não houve chamado naquele mês (ocorrência iniciou em outro mês),
+        // usamos 1 como denominador mínimo para não dividir por zero.
+        const nFalhas = chamados > 0 ? chamados : (downtimeHours > 0 ? 1 : 0);
+        const uptimeHours = Math.max(0, totalHours - downtimeHours);
+        const disp = Math.max(0, Math.min(100, (uptimeHours / totalHours) * 100));
+        const mtbfHours = nFalhas > 0 ? uptimeHours / nFalhas : totalHours;
+        const mttrHours = nFalhas > 0 ? downtimeHours / nFalhas : 0;
 
         const index = updatedData.findIndex(d => d.equip === equip && d.mes === mes);
         const newRecord: MaintenanceRecord = {
