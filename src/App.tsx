@@ -19,7 +19,7 @@ import Login from './components/Login';
 import OccurrenceModal from './components/OccurrenceModal';
 import { formatTime } from './lib/utils';
 
-import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteApiUser, getOccurrences, saveOccurrence as apiSaveOccurrence, updateOccurrence as apiUpdateOccurrence, deleteOccurrence as apiDeleteOccurrence, getEquipmentData, getStopCauses } from './lib/api';
+import { getUsers, saveUser, updateUser as updateApiUser, deleteUser as deleteApiUser, getOccurrences, saveOccurrence as apiSaveOccurrence, updateOccurrence as apiUpdateOccurrence, deleteOccurrence as apiDeleteOccurrence, getStopCauses } from './lib/api';
 function normalizeUserProfile(user: User): User {
   const profile = user.profile as string;
   if (!profile) return { ...user, profile: 'visualizar' };
@@ -47,14 +47,14 @@ export default function App() {
   useEffect(() => {
     async function loadData() {
       try {
-        const dbEscadas = await getEquipmentData('escadas').catch(() => []);
-        const dbElevadores = await getEquipmentData('elevadores').catch(() => []);
+        // Nota: maintenance_records do Supabase NÃO são usados como base de cálculo.
+        // O cálculo de disponibilidade é feito dinamicamente em processedData a partir
+        // das ocorrências concluídas (com end), usando INITIAL_*_DATA como base estática.
+        // Usar dados do banco aqui causaria leituras corrompidas caso registros antigos
+        // (calculados com chamados em aberto) existam no Supabase.
         const dbOccurrences = await getOccurrences().catch(() => []);
         const dbUsers = await getUsers().catch(() => []);
         const dbStopCauses = await getStopCauses().catch(() => []);
-
-        if (dbEscadas.length > 0) setEscadaData(dbEscadas);
-        if (dbElevadores.length > 0) setElevadorData(dbElevadores);
         if (dbOccurrences.length > 0) setOccurrences(dbOccurrences);
         if (dbStopCauses.length > 0) setStopCauses(dbStopCauses);
 
